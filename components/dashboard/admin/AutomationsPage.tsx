@@ -223,7 +223,7 @@ export default function AutomationsPage() {
             <motion.div
               key={stat.label}
               variants={itemVariants}
-              whileHover={{ y: -2, shadow: "lg" }}
+              whileHover={{ y: -2 }}
               className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm"
             >
               <div className="flex items-center gap-2 mb-2">
@@ -415,7 +415,7 @@ export default function AutomationsPage() {
                       </div>
                       <div>
                         <p className="text-xs font-medium text-gray-800">{item.label}</p>
-                        {item.sub && <p className="text-xs text-gray-500">{item.sub}</p>}
+                        {'sub' in item && item.sub && <p className="text-xs text-gray-500">{item.sub}</p>}
                       </div>
                     </div>
                   ))}

@@ -54,10 +54,7 @@ export default function LeadDetailPage() {
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans overflow-hidden">
-      <Sidebar 
-        isOpen={isSidebarOpen} 
-        setIsOpen={setIsSidebarOpen} 
-      />
+      <Sidebar currentPage="overview" onNavigate={(page) => router.push(`/dashboard/${page}`)} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Navbar onMenuClick={() => setIsSidebarOpen(true)} />
         <main className="flex-1 overflow-auto bg-slate-50/50 flex flex-col items-center">

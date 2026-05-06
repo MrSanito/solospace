@@ -3,7 +3,12 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Search, Bell, ChevronDown } from "lucide-react";
 
-export default function Navbar() {
+interface NavbarProps {
+  onMenuClick?: () => void;
+  activeNav?: string;
+}
+
+export default function Navbar({ onMenuClick, activeNav }: NavbarProps) {
   return (
     <motion.header
       initial={{ y: -60, opacity: 0 }}

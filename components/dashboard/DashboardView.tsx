@@ -21,7 +21,23 @@ const fadeUp = {
   animate: { opacity: 1, y: 0 },
 };
 
-export default function DashboardView() {
+interface DashboardViewProps {
+  onAddLead?: () => void;
+  onAddEmployee?: () => void;
+  onLeadClick?: (id: string, allIds: string[]) => void;
+  activeNav?: string;
+  refreshKey?: number;
+  sidebarFilter?: any;
+}
+
+export default function DashboardView({
+  onAddLead,
+  onAddEmployee,
+  onLeadClick,
+  activeNav,
+  refreshKey,
+  sidebarFilter,
+}: DashboardViewProps) {
   const stats = [
     { label: "Active Employees", val: "128", trend: "+12", icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
     { label: "Storage Used", val: "1.2 TB", trend: "+4%", icon: Shield, color: "text-indigo-600", bg: "bg-indigo-50" },

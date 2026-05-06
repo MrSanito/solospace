@@ -86,7 +86,7 @@ export default function EditLeadPage() {
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans overflow-hidden">
-      <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} activeNav="Dashboard" />
+      <Sidebar currentPage="overview" onNavigate={(page) => router.push(`/dashboard/${page}`)} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Navbar onMenuClick={() => setIsSidebarOpen(true)} activeNav="Edit Lead" />
 

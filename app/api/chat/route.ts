@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { createAuditLog } from "@/lib/audit";
+import { encrypt, decrypt } from "@/lib/encryption";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-me";
 
@@ -21,6 +22,13 @@ export async function GET(req: Request) {
         }
       }
     });
+
+    if (thread) {
+      thread.messages = thread.messages.map(m => ({
+        ...m,
+        content: decrypt(m.content)
+      }));
+    }
 
     return NextResponse.json(thread);
   } catch (error) {
@@ -70,7 +78,7 @@ export async function POST(req: Request) {
     const message = await prisma.chatMessage.create({
       data: {
         threadId: thread.id,
-        content: content || "",
+        content: encrypt(content || ""),
         senderType,
         senderId: senderId || null,
         attachments: {
@@ -93,7 +101,7 @@ export async function POST(req: Request) {
       actorId: senderId,
       actorName: senderType === "USER" ? "User" : "Lead",
       action: "CHAT",
-      note: `Chat message sent: ${content.substring(0, 50)}${content.length > 50 ? '...' : ''}`,
+      note: `Chat message sent`,
       source: "UI",
     });
 

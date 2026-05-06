@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
+import { decrypt } from "@/lib/encryption";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-me";
 
@@ -33,7 +34,15 @@ export async function GET(req: Request) {
       orderBy: { updatedAt: "desc" }
     });
 
-    return NextResponse.json(threads);
+    const decryptedThreads = threads.map(t => ({
+      ...t,
+      messages: t.messages.map(m => ({
+        ...m,
+        content: decrypt(m.content)
+      }))
+    }));
+
+    return NextResponse.json(decryptedThreads);
   } catch (error) {
     console.error("Chat oversight GET error:", error);
     return NextResponse.json({ error: "Failed to fetch chat threads" }, { status: 500 });

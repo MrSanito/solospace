@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
+import { encrypt, decrypt } from "@/lib/encryption";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-me";
 
@@ -60,6 +61,13 @@ export async function GET() {
         return NextResponse.json({ lead: leadInfo, messages: [] });
     }
 
+    if (thread) {
+        thread.messages = thread.messages.map(m => ({
+            ...m,
+            content: decrypt(m.content)
+        }));
+    }
+
     return NextResponse.json(thread);
   } catch (error: any) {
     console.error("[LeadChat GET] Error:", error);
@@ -101,7 +109,7 @@ export async function POST(req: Request) {
     const message = await prisma.chatMessage.create({
       data: {
         threadId: thread.id,
-        content: content || "",
+        content: encrypt(content || ""),
         senderType: "LEAD",
         senderId: lead.leadId,
         attachments: {

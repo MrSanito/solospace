@@ -33,6 +33,7 @@ export default function ChatOversightPage() {
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const isPrivileged = currentUser?.role === "ORG_ADMIN" || currentUser?.role === "MANAGER";
 
   // Security States
   const [unlockKey, setUnlockKey] = useState("");
@@ -310,7 +311,7 @@ export default function ChatOversightPage() {
                                       <p className={`text-[10px] font-medium truncate ${!isLead ? "text-white" : "text-gray-700"}`}>{file.fileName}</p>
                                       
                                       <div className="flex items-center gap-2 mt-1">
-                                        {file.isRestricted && (
+                                        {file.isRestricted && isPrivileged && (
                                           <div className="relative">
                                             {showKeyForAtt === file.id ? (
                                               <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 font-mono text-[9px] font-black bg-white text-blue-600 px-1.5 py-0.5 rounded shadow-xl whitespace-nowrap z-10 border border-blue-100">

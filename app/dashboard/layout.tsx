@@ -1,4 +1,5 @@
 "use client"
+import { useEffect } from "react";
 import { useAuth } from "@/components/auth/AuthContext";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -12,6 +13,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // If not loading and no user, don't show anything (AuthContext will redirect)
   if (!loading && !user) return null;
+
+  // Redirect SALES_REP from dashboard overview to chat oversight
+  useEffect(() => {
+    if (!loading && user?.role === "SALES_REP" && pathname === "/dashboard") {
+      router.push("/dashboard/chat");
+    }
+  }, [user, loading, pathname, router]);
 
   // Sync the Sidebar active state with the current URL
   const getCurrentPage = (): PageId => {

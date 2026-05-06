@@ -15,6 +15,7 @@ import {
   RefreshCw,
   MessageSquare,
   Paperclip,
+  Key,
 } from "lucide-react";
 
 const slideInRight = {
@@ -32,6 +33,37 @@ export default function ChatOversightPage() {
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // Security States
+  const [unlockKey, setUnlockKey] = useState("");
+  const [unlocking, setUnlocking] = useState(false);
+  const [unlockedUrls, setUnlockedUrls] = useState<Record<string, string>>({});
+  const [showUnlockModal, setShowUnlockModal] = useState<string | null>(null);
+  const [showKeyForAtt, setShowKeyForAtt] = useState<string | null>(null);
+
+  const handleUnlock = async (fileId: string) => {
+    if (!unlockKey) return;
+    setUnlocking(true);
+    try {
+      const res = await fetch("/api/drive/unlock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileId, accessKey: unlockKey }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUnlockedUrls(prev => ({ ...prev, [fileId]: data.url }));
+        setUnlockKey("");
+        setShowUnlockModal(null);
+      } else {
+        alert("Invalid access key");
+      }
+    } catch (error) {
+      console.error("Unlock error:", error);
+    } finally {
+      setUnlocking(false);
+    }
+  };
 
   const fetchThreads = async () => {
     setLoading(true);
@@ -276,7 +308,45 @@ export default function ChatOversightPage() {
                                   <FileText size={12} className={!isLead ? "text-blue-100" : "text-gray-400"} />
                                   <div className="flex-1 min-w-0">
                                       <p className={`text-[10px] font-medium truncate ${!isLead ? "text-white" : "text-gray-700"}`}>{file.fileName}</p>
-                                      <a href={file.fileUrl} target="_blank" rel="noopener noreferrer" className={`text-[9px] hover:underline font-bold ${!isLead ? "text-blue-200" : "text-blue-500"}`}>Download</a>
+                                      
+                                      <div className="flex items-center gap-2 mt-1">
+                                        {file.isRestricted && (
+                                          <div className="relative">
+                                            {showKeyForAtt === file.id ? (
+                                              <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 font-mono text-[9px] font-black bg-white text-blue-600 px-1.5 py-0.5 rounded shadow-xl whitespace-nowrap z-10 border border-blue-100">
+                                                KEY: {file.accessKey}
+                                              </span>
+                                            ) : null}
+                                            <button 
+                                              type="button"
+                                              onClick={() => setShowKeyForAtt(showKeyForAtt === file.id ? null : file.id)}
+                                              className={`flex items-center gap-1 text-[9px] font-bold ${!isLead ? "text-blue-200 hover:text-white" : "text-gray-500 hover:text-gray-800"}`}
+                                              title="Get Access Key"
+                                            >
+                                              <Key size={10} /> Get Code
+                                            </button>
+                                          </div>
+                                        )}
+
+                                        {(!file.isRestricted || unlockedUrls[file.id]) ? (
+                                          <a 
+                                            href={file.fileUrl || unlockedUrls[file.id] || "#"} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer" 
+                                            className={`text-[9px] hover:underline font-bold flex items-center gap-1 ${!isLead ? "text-white" : "text-blue-600"}`}
+                                          >
+                                            <Download size={10} /> Open
+                                          </a>
+                                        ) : (
+                                          <button 
+                                            type="button"
+                                            onClick={() => setShowUnlockModal(file.id)}
+                                            className={`text-[9px] font-bold flex items-center gap-1 ${!isLead ? "text-red-200 hover:text-red-100" : "text-red-500 hover:text-red-600"}`}
+                                          >
+                                            <Lock size={10} /> Unlock
+                                          </button>
+                                        )}
+                                      </div>
                                   </div>
                               </div>
                             ))}
@@ -396,6 +466,64 @@ export default function ChatOversightPage() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Unlock Modal */}
+      <AnimatePresence>
+        {showUnlockModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden"
+            >
+              <div className="p-8 text-center">
+                <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-6 border-2 border-red-100">
+                  <Lock size={30} className="text-red-500" />
+                </div>
+                <h3 className="text-xl font-black text-gray-800 uppercase tracking-tighter mb-2">Restricted File</h3>
+                <p className="text-sm text-gray-500 mb-8 px-4">
+                  This file is encrypted. Please enter the unique access code to download.
+                </p>
+
+                <div className="space-y-4">
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                      <Key size={18} />
+                    </span>
+                    <input 
+                      type="text"
+                      placeholder="ENTER ACCESS CODE"
+                      value={unlockKey}
+                      onChange={(e) => setUnlockKey(e.target.value.toUpperCase())}
+                      className="input input-bordered w-full pl-12 h-14 bg-gray-50 font-mono text-center tracking-[0.3em] font-bold text-lg rounded-2xl border-gray-100 focus:border-blue-400 transition-all uppercase"
+                    />
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => {
+                        setShowUnlockModal(null);
+                        setUnlockKey("");
+                      }}
+                      className="btn btn-ghost flex-1 h-14 rounded-2xl font-bold uppercase tracking-widest text-xs"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={() => handleUnlock(showUnlockModal)}
+                      disabled={unlocking || !unlockKey}
+                      className="btn btn-primary flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-blue-200"
+                    >
+                      {unlocking ? <span className="loading loading-spinner loading-xs" /> : "Unlock File"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
+import { decrypt } from "@/lib/encryption";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-me";
 
@@ -36,7 +37,12 @@ export async function GET(req: NextRequest) {
       take: 500, // Limit for performance
     });
 
-    return NextResponse.json(auditLogs);
+    const decryptedLogs = auditLogs.map(log => ({
+      ...log,
+      note: log.note ? decrypt(log.note) : log.note
+    }));
+
+    return NextResponse.json(decryptedLogs);
   } catch (error) {
     console.error("Audit Report GET error:", error);
     return NextResponse.json({ error: "Failed to fetch audit report" }, { status: 500 });

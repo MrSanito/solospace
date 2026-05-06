@@ -117,7 +117,9 @@ export async function POST(req: Request) {
                 fileName: att.fileName,
                 fileUrl: att.fileUrl,
                 fileType: att.fileType,
-                fileSize: att.fileSize
+                fileSize: att.fileSize,
+                accessKey: Math.random().toString(36).substring(2, 8).toUpperCase(),
+                isRestricted: true
             }))
         }
       },

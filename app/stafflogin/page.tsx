@@ -6,7 +6,7 @@ import { useAuth } from "@/components/auth/AuthContext";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
-export default function LoginPage() {
+export default function StaffLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -29,7 +29,7 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        toast.success("Employee Authentication Successful!");
+        toast.success("Staff Authentication Successful!");
         login(data.user);
         router.push("/dashboard");
       } else {
@@ -86,7 +86,7 @@ export default function LoginPage() {
                 letterSpacing: "0.3em",
               }}
             >
-              SPACE
+              STAFF
             </span>
           </motion.div>
 
@@ -95,9 +95,9 @@ export default function LoginPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <h1 className="text-4xl font-bold text-white mb-4 uppercase tracking-tighter">Employee Portal</h1>
+            <h1 className="text-4xl font-bold text-white mb-4 uppercase tracking-tighter">Staff Portal</h1>
             <p className="text-indigo-100 text-lg leading-relaxed font-medium">
-              Sign in to your employee account to manage leads, track conversations, and handle your daily operations.
+              Sign in to your employee account to access your assigned leads and conversations.
             </p>
           </motion.div>
         </div>
@@ -115,11 +115,10 @@ export default function LoginPage() {
               </svg>
             </div>
             <div>
-              <p className="text-white font-semibold text-sm">Employee Access Point</p>
-              <p className="text-indigo-200 text-xs">Secure login for Sales Representatives.</p>
+              <p className="text-white font-semibold text-sm">Employee Access</p>
+              <p className="text-indigo-200 text-xs">Standard operational privileges enabled.</p>
             </div>
           </div>
-          <p className="text-indigo-200/50 text-xs">© 2024 SPACE. All rights reserved.</p>
         </motion.div>
       </motion.div>
 
@@ -131,7 +130,6 @@ export default function LoginPage() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="w-full max-w-md"
         >
-          {/* Icon */}
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -152,15 +150,11 @@ export default function LoginPage() {
             className="text-center mb-8"
           >
             <h2 className="text-3xl font-black text-gray-800 mb-2 tracking-tighter uppercase">Employee Login</h2>
-            <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Sign in with your assigned staff credentials</p>
+            <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Standard user access for sales representatives</p>
           </motion.div>
 
           <form onSubmit={handleLogin} className="space-y-5">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6 }}
-            >
+            <div>
               <label className="label pb-1">
                 <span className="label-text text-gray-400 font-black uppercase tracking-widest text-[10px] px-1">Email Address</span>
               </label>
@@ -179,13 +173,9 @@ export default function LoginPage() {
                   className="input input-bordered w-full pl-10 bg-gray-50 border-gray-100 focus:border-indigo-400 focus:bg-white transition-all text-sm font-semibold rounded-2xl h-12"
                 />
               </div>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.7 }}
-            >
+            <div>
               <label className="label pb-1">
                 <span className="label-text text-gray-400 font-black uppercase tracking-widest text-[10px] px-1">Security Key</span>
               </label>
@@ -220,38 +210,19 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.85 }}
-              className="space-y-3 pt-2"
+            <motion.button
+              type="submit"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="btn btn-primary w-full text-white font-black uppercase tracking-[0.2em] rounded-2xl h-14"
+              style={{ background: "linear-gradient(135deg, #1a237e, #311b92)", border: "none" }}
+              disabled={loading}
             >
-              <motion.button
-                type="submit"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="btn btn-primary w-full text-white font-black uppercase tracking-[0.2em] rounded-2xl h-14"
-                style={{ background: "linear-gradient(135deg, #1a237e, #311b92)", border: "none" }}
-                disabled={loading}
-              >
-                {loading ? <span className="loading loading-spinner loading-sm" /> : "Authenticate Employee"}
-              </motion.button>
-            </motion.div>
+              {loading ? <span className="loading loading-spinner loading-sm" /> : "Employee Access"}
+            </motion.button>
           </form>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1 }}
-            className="text-center text-gray-400 text-[10px] font-black uppercase tracking-widest mt-8 flex items-center justify-center gap-2"
-          >
-            <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-            Secure Employee Access Point
-          </motion.p>
         </motion.div>
       </div>
     </div>

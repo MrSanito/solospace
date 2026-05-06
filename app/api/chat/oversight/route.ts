@@ -16,7 +16,8 @@ export async function GET(req: Request) {
     }
 
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    const organizationId = decoded.organizationId;
+    const { organizationId, role } = decoded;
+    const isPrivileged = role === "ORG_ADMIN" || role === "MANAGER";
 
     const threads = await prisma.chatThread.findMany({
       where: { organizationId },
@@ -38,7 +39,12 @@ export async function GET(req: Request) {
       ...t,
       messages: t.messages.map(m => ({
         ...m,
-        content: decrypt(m.content)
+        content: decrypt(m.content),
+        attachments: m.attachments.map(att => ({
+          ...att,
+          fileUrl: att.isRestricted ? (null as string | null) : att.fileUrl,
+          accessKey: isPrivileged ? (att.accessKey || "SECURE") : null
+        }))
       }))
     }));
 

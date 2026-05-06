@@ -203,6 +203,8 @@ model NoteAttachment {
   fileSizeBytes Int
   mimeType      AttachmentMimeType @default(PDF)
   pageCount     Int?
+  isRestricted  Boolean            @default(true)
+  accessKey     String?
   uploadedAt    DateTime           @default(now())
   note          Note               @relation(fields: [noteId], references: [id], onDelete: Cascade)
 
@@ -444,6 +446,8 @@ model ChatMessageAttachment {
   fileUrl        String
   fileType       String
   fileSize       Int
+  isRestricted   Boolean     @default(true)
+  accessKey      String?
   createdAt      DateTime    @default(now())
 
   message        ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
@@ -461,6 +465,8 @@ model DriveFile {
   fileSize       Int
   organizationId String
   uploadedById   String
+  isRestricted   Boolean      @default(true)
+  accessKey      String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 

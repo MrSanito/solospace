@@ -45,6 +45,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
+    const { loginType } = body;
+    if (loginType === "EMPLOYEE" && user.role !== "SALES_REP") {
+      return NextResponse.json({ error: "Unauthorized: Use Management Login" }, { status: 403 });
+    }
+    if (loginType === "MANAGEMENT" && user.role !== "ORG_ADMIN" && user.role !== "MANAGER") {
+      return NextResponse.json({ error: "Unauthorized: Use Employee Login" }, { status: 403 });
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {

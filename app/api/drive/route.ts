@@ -15,7 +15,8 @@ export async function GET(req: Request) {
     }
 
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    const organizationId = decoded.organizationId;
+    const { organizationId, role } = decoded;
+    const isPrivileged = role === "ORG_ADMIN" || role === "MANAGER";
 
     // Fetch message attachments
     const chatAttachments = await prisma.chatMessageAttachment.findMany({
@@ -77,7 +78,9 @@ export async function GET(req: Request) {
         type: file.fileType.toUpperCase(),
         access: "Internal",
         uploadedAt: file.createdAt.toISOString(),
-        url: file.fileUrl,
+        isRestricted: file.isRestricted,
+        accessKey: isPrivileged ? (file.accessKey || "SECURE") : null,
+        url: (!file.isRestricted) ? file.fileUrl : null, // EVEN OWNER MUST UNLOCK
         source: "Drive",
         leadName: "General",
         isFolder: false
@@ -92,7 +95,9 @@ export async function GET(req: Request) {
         type: att.fileType.toUpperCase(),
         access: "Shared",
         uploadedAt: att.createdAt.toISOString(),
-        url: att.fileUrl,
+        isRestricted: att.isRestricted,
+        accessKey: isPrivileged ? (att.accessKey || "SECURE") : null,
+        url: (!att.isRestricted) ? att.fileUrl : null,
         source: "Chat",
         leadName: att.message.thread.lead.contactName,
         isFolder: false
@@ -107,7 +112,9 @@ export async function GET(req: Request) {
         type: att.mimeType,
         access: "Internal",
         uploadedAt: att.uploadedAt.toISOString(),
-        url: att.fileUrl,
+        isRestricted: att.isRestricted,
+        accessKey: isPrivileged ? (att.accessKey || "SECURE") : null,
+        url: (!att.isRestricted) ? att.fileUrl : null,
         source: "Note",
         leadName: att.note.lead.contactName,
         isFolder: false
@@ -143,7 +150,9 @@ export async function POST(req: Request) {
         fileType,
         fileSize,
         organizationId,
-        uploadedById: userId
+        uploadedById: userId,
+        accessKey: Math.random().toString(36).substring(2, 8).toUpperCase(), // Generate 6-char key
+        isRestricted: true
       }
     });
 

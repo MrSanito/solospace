@@ -14,23 +14,34 @@ export async function GET(req: Request) {
 
     if (!leadId) return NextResponse.json({ error: "Missing leadId" }, { status: 400 });
 
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+    const isPrivileged = token ? (jwt.verify(token, JWT_SECRET) as any).role === "ORG_ADMIN" || (jwt.verify(token, JWT_SECRET) as any).role === "MANAGER" : false;
+
     const thread = await prisma.chatThread.findUnique({
       where: { leadId },
       include: {
         messages: {
-          orderBy: { createdAt: "asc" }
+          orderBy: { createdAt: "asc" },
+          include: { attachments: true }
         }
       }
     });
 
-    if (thread) {
-      thread.messages = thread.messages.map(m => ({
+    const safeThread = thread ? {
+      ...thread,
+      messages: thread.messages.map(m => ({
         ...m,
-        content: decrypt(m.content)
-      }));
-    }
+        content: decrypt(m.content),
+        attachments: m.attachments.map(att => ({
+          ...att,
+          fileUrl: att.isRestricted ? (null as string | null) : att.fileUrl,
+          accessKey: isPrivileged ? (att.accessKey || "SECURE") : null
+        }))
+      }))
+    } : null;
 
-    return NextResponse.json(thread);
+    return NextResponse.json(safeThread);
   } catch (error) {
     console.error("Chat GET error:", error);
     return NextResponse.json({ error: "Failed to fetch chat" }, { status: 500 });
@@ -86,7 +97,9 @@ export async function POST(req: Request) {
                 fileName: att.fileName,
                 fileUrl: att.fileUrl,
                 fileType: att.fileType,
-                fileSize: att.fileSize
+                fileSize: att.fileSize,
+                accessKey: Math.random().toString(36).substring(2, 8).toUpperCase(),
+                isRestricted: true
             }))
         }
       },
@@ -101,11 +114,25 @@ export async function POST(req: Request) {
       actorId: senderId,
       actorName: senderType === "USER" ? "User" : "Lead",
       action: "CHAT",
-      note: `Chat message sent`,
+      note: encrypt(`Chat message: ${content}`),
       source: "UI",
     });
 
-    return NextResponse.json(message);
+    // Strip fileUrl from response to enforce zero-trust even for the sender
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+    const isPrivileged = token ? (jwt.verify(token, JWT_SECRET) as any).role === "ORG_ADMIN" || (jwt.verify(token, JWT_SECRET) as any).role === "MANAGER" : false;
+
+    const safeMessage = {
+      ...message,
+      attachments: message.attachments.map(att => ({
+        ...att,
+        fileUrl: att.isRestricted ? null : att.fileUrl,
+        accessKey: isPrivileged ? (att.accessKey || "SECURE") : null
+      }))
+    };
+
+    return NextResponse.json(safeMessage);
   } catch (error) {
     console.error("Chat error:", error);
     return NextResponse.json({ error: "Failed to send message" }, { status: 500 });

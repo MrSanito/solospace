@@ -18,6 +18,8 @@ interface DriveFile {
   source: string;
   leadName: string;
   isFolder: boolean;
+  isRestricted: boolean;
+  accessKey?: string | null;
   tags?: string[];
   description?: string;
 }
@@ -41,13 +43,23 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
+import { useAuth } from "@/components/auth/AuthContext";
+
 export default function DrivePage() {
+  const { user } = useAuth();
+  const isPrivileged = user?.role === "ORG_ADMIN" || user?.role === "MANAGER";
+
   const [files, setFiles] = useState<DriveFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [selected, setSelected] = useState<DriveFile | null>(null);
   const [activeTab, setActiveTab] = useState("All Files");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [unlockKey, setUnlockKey] = useState("");
+  const [unlocking, setUnlocking] = useState(false);
+  const [unlockedUrls, setUnlockedUrls] = useState<Record<string, string>>({});
+  const [showUnlockModal, setShowUnlockModal] = useState<string | null>(null); // File ID for modal
+  const [showKeyForRow, setShowKeyForRow] = useState<string | null>(null); // File ID to show key inline
   const tabs = ["All Files", "Drive", "Chat", "Note", "Trash"];
 
   const fetchFiles = async () => {
@@ -107,6 +119,30 @@ export default function DrivePage() {
       alert("Failed to upload file");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleUnlock = async (fileId: string) => {
+    if (!unlockKey) return;
+    setUnlocking(true);
+    try {
+      const res = await fetch("/api/drive/unlock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileId, accessKey: unlockKey }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUnlockedUrls(prev => ({ ...prev, [fileId]: data.url }));
+        setUnlockKey("");
+        setShowUnlockModal(null);
+      } else {
+        alert("Invalid access key");
+      }
+    } catch (error) {
+      console.error("Unlock error:", error);
+    } finally {
+      setUnlocking(false);
     }
   };
 
@@ -206,7 +242,7 @@ export default function DrivePage() {
           <table className="table table-sm w-full">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                {["Name", "Owner", "Size", "Type", "Access", "Uploaded At", ""].map((h, i) => (
+                {["Name", "Owner", "Size", "Type", "Access", "Uploaded At", "Action", "Security"].map((h, i) => (
                   <th key={i} className="text-xs font-semibold text-gray-500 py-3 text-left px-4">{h}</th>
                 ))}
               </tr>
@@ -270,9 +306,50 @@ export default function DrivePage() {
                     {new Date(file.uploadedAt).toLocaleDateString()}
                   </td>
                   <td className="px-4" onClick={(e) => e.stopPropagation()}>
-                    <a href={file.url} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-gray-100 rounded text-blue-500">
-                        <Upload size={14} className="rotate-180" />
-                    </a>
+                    {(!file.isRestricted || unlockedUrls[file.id]) ? (
+                      <a 
+                        href={file.url || unlockedUrls[file.id]} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-600 inline-block transition-colors"
+                        title="Download File"
+                      >
+                        <Download size={15} />
+                      </a>
+                    ) : (
+                      <button 
+                        onClick={() => setShowUnlockModal(file.id)}
+                        className="p-1.5 hover:bg-red-50 rounded-lg text-red-500 flex items-center gap-1.5 transition-colors"
+                        title="Enter Access Code to Download"
+                      >
+                        <Lock size={14} />
+                        <span className="text-[10px] font-black uppercase">Unlock</span>
+                      </button>
+                    )}
+                  </td>
+                  <td className="px-4" onClick={(e) => e.stopPropagation()}>
+                    {isPrivileged && file.isRestricted && (
+                      <div className="flex items-center gap-2">
+                         {showKeyForRow === file.id ? (
+                           <span className="font-mono text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                             {file.accessKey}
+                           </span>
+                         ) : (
+                           <button 
+                             onClick={() => setShowKeyForRow(file.id)}
+                             className="btn btn-xs btn-ghost text-blue-600 gap-1 normal-case font-bold"
+                           >
+                             <Key size={12} />
+                             Get Code
+                           </button>
+                         )}
+                         {showKeyForRow === file.id && (
+                           <button onClick={() => setShowKeyForRow(null)} className="text-gray-400 hover:text-gray-600">
+                             <X size={12} />
+                           </button>
+                         )}
+                      </div>
+                    )}
                   </td>
                 </motion.tr>
               ))}
@@ -311,7 +388,7 @@ export default function DrivePage() {
             className="w-64 flex-shrink-0 bg-white border-l border-gray-200 overflow-y-auto"
           >
             <div className="p-4">
-              {selected.access === "Restricted" && (
+              {selected.isRestricted && !selected.url && !unlockedUrls[selected.id] && (
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -321,11 +398,38 @@ export default function DrivePage() {
                     <Lock size={16} className="text-red-600" />
                   </div>
                   <p className="text-xs font-semibold text-red-700">Restricted File</p>
-                  <p className="text-xs text-red-500 mt-0.5">This file is encrypted and access is restricted.</p>
-                  <button className="btn btn-xs btn-outline btn-error mt-2 w-full gap-1">
-                    <Key size={10} /> View Key / Decrypt
-                  </button>
+                  <p className="text-[10px] text-red-500 mt-0.5">Enter the access key provided by the CEO to unlock.</p>
+                  
+                  <div className="mt-3 flex gap-1">
+                    <input 
+                      type="text"
+                      placeholder="Enter Key"
+                      value={unlockKey}
+                      onChange={(e) => setUnlockKey(e.target.value.toUpperCase())}
+                      className="input input-xs input-bordered w-full text-center font-mono uppercase bg-white"
+                    />
+                    <button 
+                      onClick={() => handleUnlock(selected.id)}
+                      disabled={unlocking || !unlockKey}
+                      className="btn btn-xs btn-primary px-3"
+                    >
+                      {unlocking ? "..." : "OK"}
+                    </button>
+                  </div>
                 </motion.div>
+              )}
+
+              {isPrivileged && selected.accessKey && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl text-center">
+                  <div className="flex items-center justify-center gap-1.5 mb-1 text-blue-700">
+                    <Key size={14} />
+                    <span className="text-xs font-bold uppercase">Management Key</span>
+                  </div>
+                  <p className="text-lg font-mono font-bold tracking-widest text-blue-900 bg-white/50 py-1 rounded">
+                    {selected.accessKey}
+                  </p>
+                  <p className="text-[10px] text-blue-600 mt-1">Copy and provide this key to employees for decryption.</p>
+                </div>
               )}
 
               <div className="flex items-center justify-between mb-3">
@@ -384,6 +488,63 @@ export default function DrivePage() {
               </div>
             </div>
           </motion.aside>
+        )}
+      </AnimatePresence>
+      {/* Unlock Modal */}
+      <AnimatePresence>
+        {showUnlockModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden"
+            >
+              <div className="p-8 text-center">
+                <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-6 border-2 border-red-100">
+                  <Lock size={30} className="text-red-500" />
+                </div>
+                <h3 className="text-xl font-black text-gray-800 uppercase tracking-tighter mb-2">Restricted File</h3>
+                <p className="text-sm text-gray-500 mb-8 px-4">
+                  This file is encrypted. Please enter the unique access code to download.
+                </p>
+
+                <div className="space-y-4">
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                      <Key size={18} />
+                    </span>
+                    <input 
+                      type="text"
+                      placeholder="ENTER ACCESS CODE"
+                      value={unlockKey}
+                      onChange={(e) => setUnlockKey(e.target.value.toUpperCase())}
+                      className="input input-bordered w-full pl-12 h-14 bg-gray-50 font-mono text-center tracking-[0.3em] font-bold text-lg rounded-2xl border-gray-100 focus:border-blue-400 transition-all uppercase"
+                    />
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => {
+                        setShowUnlockModal(null);
+                        setUnlockKey("");
+                      }}
+                      className="btn btn-ghost flex-1 h-14 rounded-2xl font-bold uppercase tracking-widest text-xs"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={() => handleUnlock(showUnlockModal)}
+                      disabled={unlocking || !unlockKey}
+                      className="btn btn-primary flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-blue-200"
+                    >
+                      {unlocking ? <span className="loading loading-spinner loading-xs" /> : "Unlock File"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

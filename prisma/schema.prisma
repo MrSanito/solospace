@@ -1,0 +1,413 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Organization {
+  id           String          @id @default(uuid())
+  name         String
+  slug         String          @unique
+  logoUrl      String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  alerts       Alert[]
+  interactions Interaction[]
+  sources      LeadSource[]
+  leads        Lead[]          @relation("LeadOrganization")
+  notes        Note[]
+  stages       PipelineStage[]
+  reminders    Reminder[]
+  teams        Team[]
+  users        User[]
+  auditLogs    AuditLog[]
+  sidebarFilters SidebarFilter[]
+  chatThreads  ChatThread[]
+
+  @@map("organizations")
+}
+
+model User {
+  id             String        @id @default(uuid())
+  name           String
+  email          String        @unique
+  password       String
+  initials       String        @db.VarChar(4)
+  role           Role          @default(SALES_REP)
+  avatarUrl      String?
+  organizationId String
+  managerId      String?
+  teamId         String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  alerts         Alert[]
+  interactions   Interaction[]
+  createdLeads   Lead[]        @relation("LeadCreator")
+  ownedLeads     Lead[]        @relation("LeadOwner")
+  notes          Note[]
+  reminders      Reminder[]
+  managedTeam    Team?         @relation("TeamManager")
+  manager        User?         @relation("UserHierarchy", fields: [managerId], references: [id])
+  subordinates   User[]        @relation("UserHierarchy")
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  team           Team?         @relation("TeamMembers", fields: [teamId], references: [id])
+  sidebarFilters SidebarFilter[] @relation("SidebarFilterCreator")
+
+  @@index([organizationId])
+  @@map("users")
+}
+
+model Team {
+  id             String       @id @default(uuid())
+  name           String
+  organizationId String
+  managerId      String       @unique
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  manager        User         @relation("TeamManager", fields: [managerId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  members        User[]       @relation("TeamMembers")
+
+  @@index([organizationId])
+  @@map("teams")
+}
+
+model LeadSource {
+  id             String       @id @default(uuid())
+  name           String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  leads          Lead[]
+
+  @@unique([name, organizationId])
+  @@map("lead_sources")
+}
+
+model PipelineStage {
+  id             String       @id @default(uuid())
+  name           String
+  orderIndex     Int
+  colorClass     String
+  description    String?
+  organizationId String
+  leads          Lead[]
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([name, organizationId])
+  @@unique([orderIndex, organizationId])
+  @@map("pipeline_stages")
+}
+
+model Lead {
+  id              String         @id @default(uuid())
+  contactName     String
+  company         String
+  email           String?
+  email2          String?
+  phone           String?
+  phone2          String?
+  organizationId  String
+  stage           LeadStage      @default(NEW)
+  dealValueInr    Decimal        @default(0) @db.Decimal(15, 2)
+  priority        LeadPriority   @default(MEDIUM)
+  pipelineStageId String?
+  sourceId        String?
+  ownerId         String
+  createdById     String
+  followUpAt      DateTime?
+  closedAt        DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  requirement     String?
+  industry        String?
+  subStatus       LeadSubStatus  @default(BLANK)
+  alerts          Alert[]
+  interactions    Interaction[]
+  auditLogs       AuditLog[]
+  createdBy       User           @relation("LeadCreator", fields: [createdById], references: [id])
+  organization    Organization   @relation("LeadOrganization", fields: [organizationId], references: [id])
+  owner           User           @relation("LeadOwner", fields: [ownerId], references: [id])
+  pipelineStage   PipelineStage? @relation(fields: [pipelineStageId], references: [id])
+  source          LeadSource?    @relation(fields: [sourceId], references: [id])
+  notes           Note[]
+  reminders       Reminder[]
+  chatThread      ChatThread?
+
+  @@index([organizationId])
+  @@index([ownerId])
+  @@index([stage])
+  @@index([priority])
+  @@index([followUpAt])
+  @@map("leads")
+}
+
+model Interaction {
+  id             String          @id @default(uuid())
+  leadId         String
+  userId         String
+  organizationId String
+  type           InteractionType
+  summary        String?
+  durationMin    Int?
+  occurredAt     DateTime        @default(now())
+  createdAt      DateTime        @default(now())
+  lead           Lead            @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+  user           User            @relation(fields: [userId], references: [id])
+  note           Note?           @relation("InteractionNote")
+
+  @@index([organizationId])
+  @@index([leadId])
+  @@index([userId])
+  @@index([occurredAt])
+  @@map("interactions")
+}
+
+model Note {
+  id             String           @id @default(uuid())
+  leadId         String
+  userId         String
+  organizationId String
+  interactionId  String?          @unique
+  content        String
+  aiExtracted    Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  attachments    NoteAttachment[]
+  interaction    Interaction?     @relation("InteractionNote", fields: [interactionId], references: [id])
+  lead           Lead             @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+  user           User             @relation(fields: [userId], references: [id])
+
+  @@index([organizationId])
+  @@index([leadId])
+  @@index([interactionId])
+  @@map("notes")
+}
+
+model NoteAttachment {
+  id            String             @id @default(uuid())
+  noteId        String
+  fileName      String
+  fileUrl       String
+  fileKey       String
+  fileSizeBytes Int
+  mimeType      AttachmentMimeType @default(PDF)
+  pageCount     Int?
+  uploadedAt    DateTime           @default(now())
+  note          Note               @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@index([noteId])
+  @@map("note_attachments")
+}
+
+model Reminder {
+  id             String         @id @default(uuid())
+  leadId         String
+  userId         String
+  organizationId String
+  type           ReminderType
+  status         ReminderStatus @default(PENDING)
+  aiExtracted    Boolean        @default(false)
+  scheduledAt    DateTime
+  completedAt    DateTime?
+  description    String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  lead           Lead           @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  user           User           @relation(fields: [userId], references: [id])
+
+  @@index([organizationId])
+  @@index([userId, scheduledAt])
+  @@index([leadId])
+  @@map("reminders")
+}
+
+model Alert {
+  id             String       @id @default(uuid())
+  userId         String
+  organizationId String
+  leadId         String?
+  type           AlertType
+  title          String
+  body           String?
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  lead           Lead?        @relation(fields: [leadId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([userId, isRead])
+  @@map("alerts")
+}
+
+model ChatThread {
+  id             String        @id @default(uuid())
+  leadId         String        @unique
+  organizationId String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  
+  lead           Lead          @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  messages       ChatMessage[]
+
+  @@map("chat_threads")
+}
+
+model ChatMessage {
+  id             String     @id @default(uuid())
+  threadId       String
+  senderId       String?    
+  senderType     SenderType
+  content        String
+  createdAt      DateTime   @default(now())
+  
+  thread         ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
+}
+
+enum SenderType {
+  LEAD
+  USER
+}
+
+enum Role {
+  MANAGER
+  SALES_REP
+  ORG_ADMIN
+}
+
+enum LeadPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum LeadStage {
+  NEW
+  CONTACTED
+  NOT_INTERESTED
+  MEETING_SET
+  NEGOTIATION
+  COLD
+  CHATTING
+}
+
+enum InteractionType {
+  CALL
+  EMAIL
+  WHATSAPP
+  MEETING
+  IN_PERSON
+  CHAT
+}
+
+enum ReminderType {
+  CALL
+  EMAIL
+  WHATSAPP
+  MEETING
+}
+
+enum ReminderStatus {
+  PENDING
+  DONE
+  SNOOZED
+  CANCELLED
+}
+
+enum AlertType {
+  FOLLOW_UP_DUE
+  LEAD_ASSIGNED
+  STAGE_CHANGED
+  REMINDER_DUE
+  AI_REMINDER
+  SYSTEM
+  CHAT
+}
+
+enum AttachmentMimeType {
+  PDF
+  DOCX
+  XLSX
+  PNG
+  JPEG
+  OTHER
+}
+
+model AuditLog {
+  id             String       @id @default(uuid())
+  organizationId String
+  leadId         String?
+  actorType      ActorType
+  actorId        String?      // null for SYSTEM/AI if needed
+  actorName      String?      // denormalized for fast read
+  action         String       // CREATE, UPDATE, DELETE, etc.
+  field          String?      // "stage", "priority", etc.
+  beforeValue    String?      // store as string/json
+  afterValue     String?
+  note           String?
+  source         SourceType
+  createdAt      DateTime     @default(now())
+
+  // relations
+  lead           Lead?         @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([leadId])
+  @@index([organizationId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+enum ActorType {
+  USER
+  SYSTEM
+  AI
+}
+
+enum SourceType {
+  UI
+  AUTOMATION
+  API
+  AI
+}
+
+enum LeadSubStatus {
+  CHATTING
+  NOT_ANSWERED
+  WRONG_NO
+  NO_REQUIREMENT
+  BUDGET_LOW
+  PROPOSAL_SENT
+  WARM_LEAD
+  BLANK
+}
+
+model SidebarFilter {
+  id             String        @id @default(uuid())
+  name           String
+  status         LeadStage?
+  subStatus      LeadSubStatus?
+  dealSizeMin    Decimal?      @db.Decimal(15, 2)
+  dealSizeMax    Decimal?      @db.Decimal(15, 2)
+  icon           String        @default("filter")
+  color          String        @default("blue")
+  orderIndex     Int           @default(0)
+  organizationId String
+  createdById    String
+  createdAt      DateTime      @default(now())
+
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  createdBy      User          @relation("SidebarFilterCreator", fields: [createdById], references: [id])
+
+  @@index([organizationId])
+  @@map("sidebar_filters")
+}

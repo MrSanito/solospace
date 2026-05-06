@@ -1,38 +1,26 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Upload,
-  FolderPlus,
-  Key,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
-  MoreHorizontal,
-  X,
-  Plus,
-  LayoutGrid,
-  List,
-  Lock,
-  CheckCircle2,
-  FileText,
-  Image,
-  FileSpreadsheet,
-  FileArchive,
-  Folder,
-} from "lucide-react";
+import { Upload, FolderPlus, List, LayoutGrid, CheckCircle2, Lock, FileText, FileSpreadsheet, FileArchive, File, Image, X, Key, Folder, Filter, FileCode, FileJson, Download, ChevronLeft, ChevronRight, MoreHorizontal, Plus } from "lucide-react";
 
-const files = [
-  { id: "1", name: "Honda City ZX - Brochures", owner: "Rahul Mehta", initials: "RM", color: "bg-blue-600", size: "—", type: "Folder", access: "Restricted", uploadedAt: "12 Apr 2024, 11:06 AM", isFolder: true, tags: ["Honda", "Brochures"], description: "Main brochure collection." },
-  { id: "2", name: "Brochure_Honda_City_ZX.pdf", owner: "Rahul Mehta", initials: "RM", color: "bg-blue-600", size: "2.4 MB", type: "PDF", access: "Restricted", uploadedAt: "12 Apr 2024, 11:06 AM", isFolder: false, tags: ["Brochure", "Honda City ZX"], description: "Brochure shared with leads." },
-  { id: "3", name: "City_ZX_Interior.jpg", owner: "Amit Sharma", initials: "AS", color: "bg-indigo-600", size: "1.2 MB", type: "JPG", access: "Restricted", uploadedAt: "12 Apr 2024, 10:58 AM", isFolder: false, tags: ["Interior"], description: "Interior photo." },
-  { id: "4", name: "Variant_Price_List.docx", owner: "Amit Sharma", initials: "AS", color: "bg-indigo-600", size: "320 KB", type: "DOCX", access: "Restricted", uploadedAt: "12 Apr 2024, 10:52 AM", isFolder: false, tags: ["Pricing"], description: "Variant pricing document." },
-  { id: "5", name: "City_ZX_Variants.xlsx", owner: "Pooja Patel", initials: "PP", color: "bg-pink-600", size: "180 KB", type: "XLSX", access: "Restricted", uploadedAt: "12 Apr 2024, 10:45 AM", isFolder: false, tags: ["Variants"], description: "Variants spreadsheet." },
-  { id: "6", name: "On_Road_Price_Delhi.pdf", owner: "Karan Trivedi", initials: "KT", color: "bg-teal-600", size: "98 KB", type: "PDF", access: "Allowed", uploadedAt: "12 Apr 2024, 09:48 AM", isFolder: false, tags: ["Pricing", "Delhi"], description: "On-road pricing for Delhi." },
-  { id: "7", name: "EMI_Options.pdf", owner: "Neha Singh", initials: "NS", color: "bg-orange-500", size: "210 KB", type: "PDF", access: "Allowed", uploadedAt: "12 Apr 2024, 09:32 AM", isFolder: false, tags: ["EMI", "Finance"], description: "EMI options document." },
-  { id: "8", name: "Customer_Images", owner: "Rahul Mehta", initials: "RM", color: "bg-blue-600", size: "—", type: "Folder", access: "Restricted", uploadedAt: "11 Apr 2024, 04:21 PM", isFolder: true, tags: [], description: "" },
-  { id: "9", name: "Walkaround_Video.zip", owner: "Sandeep Mishra", initials: "SM", color: "bg-violet-600", size: "45 MB", type: "ZIP", access: "Allowed", uploadedAt: "11 Apr 2024, 03:10 PM", isFolder: false, tags: ["Video"], description: "Vehicle walkaround video." },
-  { id: "10", name: "Insurance_Details.pdf", owner: "Deepak Solanki", initials: "DS", color: "bg-slate-600", size: "120 KB", type: "PDF", access: "Allowed", uploadedAt: "11 Apr 2024, 02:47 PM", isFolder: false, tags: ["Insurance"], description: "Insurance documentation." },
-];
+
+// Types for drive files
+interface DriveFile {
+  id: string;
+  name: string;
+  owner: string;
+  initials: string;
+  color: string;
+  size: string;
+  type: string;
+  access: string;
+  uploadedAt: string;
+  url: string;
+  source: string;
+  leadName: string;
+  isFolder: boolean;
+  tags?: string[];
+  description?: string;
+}
 
 function FileIcon({ type, isFolder }: { type: string; isFolder?: boolean }) {
   if (isFolder) return <Folder size={18} className="text-yellow-500" />;
@@ -54,10 +42,78 @@ const itemVariants = {
 };
 
 export default function DrivePage() {
-  const [selected, setSelected] = useState(files[1]);
+  const [files, setFiles] = useState<DriveFile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [selected, setSelected] = useState<DriveFile | null>(null);
   const [activeTab, setActiveTab] = useState("All Files");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
-  const tabs = ["All Files", "My Uploads", "Shared", "Restricted", "Trash"];
+  const tabs = ["All Files", "Drive", "Chat", "Note", "Trash"];
+
+  const fetchFiles = async () => {
+    try {
+      const res = await fetch("/api/drive");
+      if (res.ok) {
+        const data = await res.json();
+        setFiles(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch drive files");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFiles();
+  }, []);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      // 1. Upload to Cloudinary
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!uploadRes.ok) throw new Error("Upload failed");
+      const uploadData = await uploadRes.json();
+
+      // 2. Save to Drive Database
+      const saveRes = await fetch("/api/drive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: file.name,
+          fileName: file.name,
+          fileUrl: uploadData.url,
+          fileType: file.name.split('.').pop() || 'file',
+          fileSize: file.size,
+        }),
+      });
+
+      if (saveRes.ok) {
+        fetchFiles();
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Failed to upload file");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const filteredFiles = files.filter(f => {
+    if (activeTab === "All Files") return true;
+    return f.source === activeTab;
+  });
 
   return (
     <div className="flex h-full">
@@ -73,14 +129,23 @@ export default function DrivePage() {
             <p className="text-sm text-gray-500 mt-0.5">All files and folders. Includes restricted and encrypted data.</p>
           </div>
           <div className="flex gap-2">
-            <motion.button whileHover={{ scale: 1.03 }} className="btn btn-sm btn-outline gap-2 bg-white">
-              <Upload size={14} /> Upload
+            <input 
+              type="file" 
+              id="drive-upload" 
+              className="hidden" 
+              onChange={handleUpload}
+            />
+            <motion.button 
+              whileHover={{ scale: 1.03 }} 
+              onClick={() => document.getElementById("drive-upload")?.click()}
+              disabled={uploading}
+              className="btn btn-sm btn-outline gap-2 bg-white"
+            >
+              {uploading ? <span className="loading loading-spinner loading-xs" /> : <Upload size={14} />}
+              Upload
             </motion.button>
             <motion.button whileHover={{ scale: 1.03 }} className="btn btn-sm btn-outline gap-2 bg-white">
               <FolderPlus size={14} /> New Folder
-            </motion.button>
-            <motion.button whileHover={{ scale: 1.03 }} className="btn btn-sm btn-primary gap-2 shadow-lg shadow-blue-200">
-              <Key size={14} /> View Key / Decrypt
             </motion.button>
           </div>
         </motion.div>
@@ -147,7 +212,19 @@ export default function DrivePage() {
               </tr>
             </thead>
             <motion.tbody variants={containerVariants} initial="hidden" animate="visible">
-              {files.map((file) => (
+              {loading ? (
+                <tr>
+                    <td colSpan={7} className="text-center py-12">
+                        <span className="loading loading-spinner loading-md text-blue-600" />
+                    </td>
+                </tr>
+              ) : filteredFiles.length === 0 ? (
+                <tr>
+                    <td colSpan={7} className="text-center py-12 text-gray-500">
+                        No files found in this section.
+                    </td>
+                </tr>
+              ) : filteredFiles.map((file) => (
                 <motion.tr
                   key={file.id}
                   variants={itemVariants}
@@ -164,13 +241,13 @@ export default function DrivePage() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-800">{file.name}</p>
-                        {file.isFolder && <p className="text-xs text-gray-400">12 files</p>}
+                        {file.isFolder && <p className="text-xs text-gray-400">Folder</p>}
                       </div>
                     </div>
                   </td>
                   <td className="px-4">
                     <div className="flex items-center gap-2">
-                      <div className={`w-6 h-6 rounded-full ${file.color} text-white text-xs font-bold flex items-center justify-center`}>
+                      <div className={`w-6 h-6 rounded-full ${file.color || 'bg-gray-400'} text-white text-xs font-bold flex items-center justify-center`}>
                         {file.initials}
                       </div>
                       <span className="text-xs text-gray-700">{file.owner}</span>
@@ -180,19 +257,22 @@ export default function DrivePage() {
                   <td className="text-xs text-gray-600 px-4">{file.type}</td>
                   <td className="px-4">
                     <span className={`badge badge-sm font-medium gap-1 ${
-                      file.access === "Restricted"
-                        ? "text-red-600 bg-red-50 border-red-200"
-                        : "text-green-700 bg-green-50 border-green-200"
+                      file.source === "Drive"
+                        ? "text-teal-700 bg-teal-50 border-teal-200"
+                        : file.source === "Chat"
+                        ? "text-blue-700 bg-blue-50 border-blue-200"
+                        : "text-indigo-700 bg-indigo-50 border-indigo-200"
                     }`}>
-                      {file.access === "Restricted" ? <Lock size={9} /> : <CheckCircle2 size={9} />}
-                      {file.access}
+                      {file.source}
                     </span>
                   </td>
-                  <td className="text-xs text-gray-500 px-4">{file.uploadedAt}</td>
+                  <td className="text-xs text-gray-500 px-4">
+                    {new Date(file.uploadedAt).toLocaleDateString()}
+                  </td>
                   <td className="px-4" onClick={(e) => e.stopPropagation()}>
-                    <button className="p-1 hover:bg-gray-100 rounded">
-                      <MoreHorizontal size={14} className="text-gray-400" />
-                    </button>
+                    <a href={file.url} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-gray-100 rounded text-blue-500">
+                        <Upload size={14} className="rotate-180" />
+                    </a>
                   </td>
                 </motion.tr>
               ))}

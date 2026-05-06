@@ -13,13 +13,13 @@ const pool = new pg.Pool({
 
 const adapter = new PrismaPg(pool)
 
-const globalForPrisma = global as unknown as { prisma_v5: PrismaClient }
+const globalForPrisma = global as unknown as { prisma_v6: PrismaClient }
 
 export const prisma =
-  globalForPrisma.prisma_v5 ||
+  globalForPrisma.prisma_v6 ||
   new PrismaClient({
     adapter,
     log: ['error', 'warn'],
   })
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma_v5 = prisma
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma_v6 = prisma

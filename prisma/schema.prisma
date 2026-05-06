@@ -26,6 +26,7 @@ model Organization {
   auditLogs    AuditLog[]
   sidebarFilters SidebarFilter[]
   chatThreads  ChatThread[]
+  driveFiles   DriveFile[]
 
   @@map("organizations")
 }
@@ -38,6 +39,8 @@ model User {
   initials       String        @db.VarChar(4)
   role           Role          @default(SALES_REP)
   avatarUrl      String?
+  department     String?
+  jobTitle       String?
   organizationId String
   managerId      String?
   teamId         String?
@@ -55,6 +58,7 @@ model User {
   organization   Organization  @relation(fields: [organizationId], references: [id])
   team           Team?         @relation("TeamMembers", fields: [teamId], references: [id])
   sidebarFilters SidebarFilter[] @relation("SidebarFilterCreator")
+  driveFiles     DriveFile[]
 
   @@index([organizationId])
   @@map("users")
@@ -123,6 +127,7 @@ model Lead {
   updatedAt       DateTime       @updatedAt
   requirement     String?
   industry        String?
+  project         String?
   subStatus       LeadSubStatus  @default(BLANK)
   alerts          Alert[]
   interactions    Interaction[]
@@ -135,6 +140,7 @@ model Lead {
   notes           Note[]
   reminders       Reminder[]
   chatThread      ChatThread?
+  portalAccount   LeadPortalAccount?
 
   @@index([organizationId])
   @@index([ownerId])
@@ -250,6 +256,8 @@ model ChatThread {
   id             String        @id @default(uuid())
   leadId         String        @unique
   organizationId String
+  channel        String        @default("WhatsApp")
+  status         String        @default("Active")
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   
@@ -269,6 +277,7 @@ model ChatMessage {
   createdAt      DateTime   @default(now())
   
   thread         ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  attachments    ChatMessageAttachment[]
 
   @@map("chat_messages")
 }
@@ -282,6 +291,7 @@ enum Role {
   MANAGER
   SALES_REP
   ORG_ADMIN
+  LEAD
 }
 
 enum LeadPriority {
@@ -410,4 +420,54 @@ model SidebarFilter {
 
   @@index([organizationId])
   @@map("sidebar_filters")
+}
+
+model LeadPortalAccount {
+  id             String    @id @default(uuid())
+  leadId         String    @unique
+  username       String    @unique
+  passwordHash   String
+  isActive       Boolean   @default(true)
+  lastLoginAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  lead           Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@map("lead_portal_accounts")
+}
+
+model ChatMessageAttachment {
+  id             String      @id @default(uuid())
+  messageId      String
+  fileName       String
+  fileUrl        String
+  fileType       String
+  fileSize       Int
+  createdAt      DateTime    @default(now())
+
+  message        ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@map("chat_message_attachments")
+}
+
+model DriveFile {
+  id             String       @id @default(uuid())
+  name           String
+  fileName       String
+  fileUrl        String
+  fileType       String
+  fileSize       Int
+  organizationId String
+  uploadedById   String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  uploadedBy     User         @relation(fields: [uploadedById], references: [id])
+
+  @@index([organizationId])
+  @@index([uploadedById])
+  @@map("drive_files")
 }

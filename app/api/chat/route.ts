@@ -32,10 +32,16 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { leadId, content, senderType, senderId } = body;
+    const { leadId, content, senderType, senderId, attachments } = body;
+    console.log("[OversightChat POST] Received:", { leadId, senderType, content, attachmentsCount: attachments?.length });
 
-    if (!leadId || !content || !senderType) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    // Check if at least one of content or attachments is present
+    const hasContent = content && content.trim().length > 0;
+    const hasAttachments = attachments && attachments.length > 0;
+
+    if (!leadId || !senderType || (!hasContent && !hasAttachments)) {
+      console.warn("[OversightChat POST] Validation failed:", { leadId, senderType, hasContent, hasAttachments });
+      return NextResponse.json({ error: "Missing required fields or empty message" }, { status: 400 });
     }
 
     // Find or create thread
@@ -44,6 +50,7 @@ export async function POST(req: Request) {
     });
 
     if (!thread) {
+      console.log("[OversightChat POST] Creating new thread for lead:", leadId);
       const lead = await prisma.lead.findUnique({
         where: { id: leadId },
         select: { organizationId: true }
@@ -58,13 +65,24 @@ export async function POST(req: Request) {
       });
     }
 
+    console.log("[OversightChat POST] Creating message in thread:", thread.id);
+
     const message = await prisma.chatMessage.create({
       data: {
         threadId: thread.id,
-        content,
+        content: content || "",
         senderType,
-        senderId: senderId || null
-      }
+        senderId: senderId || null,
+        attachments: {
+            create: body.attachments?.map((att: any) => ({
+                fileName: att.fileName,
+                fileUrl: att.fileUrl,
+                fileType: att.fileType,
+                fileSize: att.fileSize
+            }))
+        }
+      },
+      include: { attachments: true }
     });
 
     // Create Audit Log for Chat

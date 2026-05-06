@@ -2,17 +2,15 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "@/components/auth/AuthContext";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
-export default function LoginPage() {
+export default function LeadLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -20,7 +18,8 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/login", {
+      // Placeholder for lead-specific login API
+      const res = await fetch("/api/auth/lead/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -29,14 +28,15 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        toast.success("Authentication Successful!");
-        login(data.user);
-        router.push("/dashboard");
+        toast.success("Lead Portal Access Granted!");
+        // Store lead info for the dashboard
+        localStorage.setItem("lead_info", JSON.stringify(data.lead));
+        router.push("/lead/dashboard"); 
       } else {
-        toast.error(data.error || "Access Denied");
+        toast.error(data.error || "Invalid Credentials");
       }
     } catch (error) {
-      toast.error("Connection synchronization failed");
+      toast.error("Connection failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -51,35 +51,31 @@ export default function LoginPage() {
         transition={{ duration: 0.7, ease: "easeOut" }}
         className="hidden lg:flex flex-col justify-between w-2/5 relative overflow-hidden"
         style={{
-          background: "linear-gradient(145deg, #0d1b6e 0%, #1a237e 30%, #0a1045 60%, #060c2e 100%)",
+          background: "linear-gradient(145deg, #1e3a8a 0%, #3b82f6 30%, #1e40af 60%, #172554 100%)",
         }}
       >
-        {/* Animated Stars */}
-        {[...Array(30)].map((_, i) => (
+        {/* Animated Background Elements */}
+        {[...Array(20)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute rounded-full bg-white"
+            className="absolute rounded-full bg-blue-200/20"
             style={{
-              width: Math.random() * 3 + 1,
-              height: Math.random() * 3 + 1,
+              width: Math.random() * 50 + 20,
+              height: Math.random() * 50 + 20,
               top: `${Math.random() * 100}%`,
               left: `${Math.random() * 100}%`,
             }}
-            animate={{ opacity: [0.2, 1, 0.2] }}
-            transition={{ duration: Math.random() * 3 + 2, repeat: Infinity, delay: Math.random() * 2 }}
+            animate={{ 
+              y: [0, -30, 0],
+              opacity: [0.1, 0.4, 0.1]
+            }}
+            transition={{ 
+              duration: Math.random() * 5 + 5, 
+              repeat: Infinity, 
+              ease: "easeInOut" 
+            }}
           />
         ))}
-
-        {/* Planet glow */}
-        <motion.div
-          className="absolute bottom-0 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full"
-          style={{
-            background: "radial-gradient(circle, rgba(59,130,246,0.3) 0%, rgba(29,78,216,0.15) 50%, transparent 70%)",
-            filter: "blur(20px)",
-          }}
-          animate={{ scale: [1, 1.05, 1] }}
-          transition={{ duration: 4, repeat: Infinity }}
-        />
 
         <div className="relative z-10 p-10">
           {/* Logo */}
@@ -92,19 +88,15 @@ export default function LoginPage() {
             <span
               className="text-4xl font-black tracking-widest"
               style={{
-                color: "#60a5fa",
-                textShadow: "0 0 20px rgba(96,165,250,0.6)",
+                color: "#ffffff",
+                textShadow: "0 0 20px rgba(255,255,255,0.4)",
                 fontFamily: "'Orbitron', sans-serif",
                 letterSpacing: "0.3em",
               }}
             >
               SPACE
             </span>
-            <motion.div
-              className="w-2 h-2 rounded-full bg-blue-400"
-              animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
+            <span className="text-blue-200 font-bold uppercase tracking-widest text-xs mt-2">Portal</span>
           </motion.div>
 
           <motion.div
@@ -112,9 +104,9 @@ export default function LoginPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <h1 className="text-4xl font-bold text-white mb-4 uppercase tracking-tighter">Welcome Back!</h1>
-            <p className="text-blue-200 text-lg leading-relaxed font-medium">
-              Sign in to your employee account to access your assigned leads and conversations.
+            <h1 className="text-4xl font-bold text-white mb-4 uppercase tracking-tighter">Your Journey Starts Here</h1>
+            <p className="text-blue-100 text-lg leading-relaxed font-medium">
+              Access your personalized portal to track your project progress, manage documents, and chat directly with our experts.
             </p>
           </motion.div>
         </div>
@@ -126,30 +118,22 @@ export default function LoginPage() {
           className="relative z-10 p-10"
         >
           <div className="flex items-center gap-4 mb-8 bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
-            <div className="w-10 h-10 rounded-full bg-blue-500/30 flex items-center justify-center border border-blue-400/40">
-              <svg className="w-5 h-5 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center border border-white/30">
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
             </div>
             <div>
-              <p className="text-white font-semibold text-sm">Secure. Monitored. Logged.</p>
-              <p className="text-blue-200 text-xs">All activities are recorded and monitored.</p>
+              <p className="text-white font-semibold text-sm">Direct Support Access</p>
+              <p className="text-blue-100 text-xs">Chat with your assigned relationship manager.</p>
             </div>
           </div>
-          <p className="text-blue-300/50 text-xs">© 2024 SPACE. All rights reserved.</p>
+          <p className="text-blue-200/50 text-xs">© 2024 SPACE Portal. All rights reserved.</p>
         </motion.div>
       </motion.div>
 
       {/* Right Panel */}
       <div className="flex-1 flex items-center justify-center p-8 bg-white relative">
-        {/* Language selector */}
-        <div className="absolute top-4 right-4">
-          <select className="select select-ghost select-sm text-gray-500 text-sm">
-            <option>🌐 English</option>
-            <option>हिंदी</option>
-          </select>
-        </div>
-
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -164,8 +148,8 @@ export default function LoginPage() {
             className="flex justify-center mb-6"
           >
             <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center border-2 border-blue-100">
-              <svg className="w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              <svg className="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
               </svg>
             </div>
           </motion.div>
@@ -176,8 +160,8 @@ export default function LoginPage() {
             transition={{ delay: 0.5 }}
             className="text-center mb-8"
           >
-            <h2 className="text-3xl font-black text-gray-800 mb-2 tracking-tighter uppercase">Employee Login</h2>
-            <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Access your assigned leads and conversations</p>
+            <h2 className="text-3xl font-black text-gray-800 mb-2 tracking-tighter uppercase">Lead Portal Access</h2>
+            <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Sign in with your registered email and portal key</p>
           </motion.div>
 
           <form onSubmit={handleLogin} className="space-y-5">
@@ -187,21 +171,21 @@ export default function LoginPage() {
               transition={{ delay: 0.6 }}
             >
               <label className="label pb-1">
-                <span className="label-text text-gray-400 font-black uppercase tracking-widest text-[10px] px-1">Email Address</span>
+                <span className="label-text text-gray-400 font-black uppercase tracking-widest text-[10px] px-1">Registered Email</span>
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.206" />
                   </svg>
                 </span>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@chatcrm.com"
+                  placeholder="your@email.com"
                   required
-                  className="input input-bordered w-full pl-10 bg-gray-50 border-gray-100 focus:border-blue-400 focus:bg-white transition-all text-sm font-semibold rounded-2xl h-12"
+                  className="input input-bordered w-full pl-10 bg-gray-50 border-gray-100 focus:border-blue-500 focus:bg-white transition-all text-sm font-semibold rounded-2xl h-12"
                 />
               </div>
             </motion.div>
@@ -212,21 +196,21 @@ export default function LoginPage() {
               transition={{ delay: 0.7 }}
             >
               <label className="label pb-1">
-                <span className="label-text text-gray-400 font-black uppercase tracking-widest text-[10px] px-1">Security Key</span>
+                <span className="label-text text-gray-400 font-black uppercase tracking-widest text-[10px] px-1">Portal Key</span>
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                   </svg>
                 </span>
                 <input
                   type={showPass ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="Enter your key"
                   required
-                  className="input input-bordered w-full pl-10 pr-10 bg-gray-50 border-gray-100 focus:border-blue-400 focus:bg-white transition-all text-sm font-semibold rounded-2xl h-12"
+                  className="input input-bordered w-full pl-10 pr-10 bg-gray-50 border-gray-100 focus:border-blue-500 focus:bg-white transition-all text-sm font-semibold rounded-2xl h-12"
                 />
                 <button
                   type="button"
@@ -260,10 +244,10 @@ export default function LoginPage() {
                   onChange={(e) => setRemember(e.target.checked)}
                   className="checkbox checkbox-sm rounded-lg checkbox-primary"
                 />
-                <span className="text-gray-500 text-[10px] font-black uppercase tracking-widest">Remember me</span>
+                <span className="text-gray-500 text-[10px] font-black uppercase tracking-widest">Stay Logged In</span>
               </label>
-              <a href="#" className="text-blue-600 text-[10px] font-black uppercase tracking-widest hover:text-blue-700 transition-colors">
-                Forgot password?
+              <a href="#" className="text-blue-500 text-[10px] font-black uppercase tracking-widest hover:text-blue-700 transition-colors">
+                Need Help Accessing?
               </a>
             </motion.div>
 
@@ -278,39 +262,25 @@ export default function LoginPage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="btn btn-primary w-full text-white font-black uppercase tracking-[0.2em] rounded-2xl h-14"
-                style={{ background: "linear-gradient(135deg, #0d1b6e, #1a237e)", border: "none" }}
+                style={{ background: "linear-gradient(135deg, #2563eb, #1d4ed8)", border: "none" }}
                 disabled={loading}
               >
-                {loading ? <span className="loading loading-spinner loading-sm" /> : "Authenticate Access"}
-              </motion.button>
-
-              <div className="divider text-gray-400 text-[10px] font-black uppercase tracking-widest">or</div>
-
-              <motion.button
-                type="button"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="btn btn-outline w-full border-gray-100 text-gray-600 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 rounded-2xl h-14 font-black uppercase tracking-widest text-[10px]"
-              >
-                <svg className="w-5 h-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-                Login with OTP
+                {loading ? <span className="loading loading-spinner loading-sm" /> : "Access My Portal"}
               </motion.button>
             </motion.div>
           </form>
 
-          <motion.p
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1 }}
-            className="text-center text-gray-400 text-[10px] font-black uppercase tracking-widest mt-8 flex items-center justify-center gap-2"
+            className="mt-8 text-center"
           >
-            <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-            All activities are securely logged and monitored.
-          </motion.p>
+             <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">
+              Don't have a portal key? <br/>
+              <span className="text-blue-500 mt-1 block">Contact your representative</span>
+             </p>
+          </motion.div>
         </motion.div>
       </div>
     </div>

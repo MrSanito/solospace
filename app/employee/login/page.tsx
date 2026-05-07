@@ -162,7 +162,7 @@ export default function EmployeeLoginPage() {
             transition={{ delay: 0.3 }}
             className="mb-16"
           >
-            <img src="/logo.png" alt="Space Logo" className="h-43 w-auto object-contain brightness-0 invert" />
+            <img src="/logo.png" alt="Space Logo" className="h-43 w-auto object-contain brightness-0 invert" style={{ width: "auto" }} />
           </motion.div>
 
           {/* Welcome text */}

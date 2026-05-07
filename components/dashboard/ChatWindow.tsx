@@ -179,7 +179,25 @@ export default function ChatWindow({ leadId, userId, senderType }: ChatWindowPro
                                 </span>
                               ) : null}
                               <button 
-                                onClick={() => setShowKeyForAtt(showKeyForAtt === att.id ? null : att.id)}
+                                onClick={async () => {
+                                  const alreadyShowing = showKeyForAtt === att.id;
+                                  setShowKeyForAtt(alreadyShowing ? null : att.id);
+                                  if (!alreadyShowing && isPrivileged) {
+                                    try {
+                                      await fetch("/api/audit/log", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({
+                                          action: "VIEW_KEY",
+                                          note: `Admin viewed chat attachment key for: ${att.fileName}`,
+                                          source: "UI"
+                                        })
+                                      });
+                                    } catch (e) {
+                                      console.error("Failed to log key view");
+                                    }
+                                  }
+                                }}
                                 className="p-1.5 hover:bg-white/10 rounded-lg text-blue-400 transition-colors"
                                 title="Get Access Key"
                               >

@@ -264,7 +264,24 @@ export default function DrivePage() {
                 <motion.tr
                   key={file.id}
                   variants={itemVariants}
-                  onClick={() => setSelected(file)}
+                  onClick={async () => {
+                    setSelected(file);
+                    if (isPrivileged && file.isRestricted && file.accessKey) {
+                      try {
+                        await fetch("/api/audit/log", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            action: "VIEW_KEY",
+                            note: `Admin viewed access key for file (via selection): ${file.name}`,
+                            source: "UI"
+                          })
+                        });
+                      } catch (e) {
+                        console.error("Failed to log key view");
+                      }
+                    }
+                  }}
                   whileHover={{ backgroundColor: "rgba(59,130,246,0.03)" }}
                   className={`border-b border-gray-100 cursor-pointer transition-colors ${
                     selected?.id === file.id ? "bg-blue-50/60" : ""
@@ -307,15 +324,31 @@ export default function DrivePage() {
                   </td>
                   <td className="px-4" onClick={(e) => e.stopPropagation()}>
                     {(!file.isRestricted || unlockedUrls[file.id]) ? (
-                      <a 
-                        href={file.url || unlockedUrls[file.id]} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
+                      <button 
+                        onClick={async () => {
+                          const url = file.url || unlockedUrls[file.id];
+                          if (url) {
+                            window.open(url, "_blank");
+                            try {
+                              await fetch("/api/audit/log", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  action: "DOWNLOAD",
+                                  note: `User downloaded file: ${file.name}`,
+                                  source: "UI"
+                                })
+                              });
+                            } catch (e) {
+                              console.error("Failed to log download");
+                            }
+                          }
+                        }}
                         className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-600 inline-block transition-colors"
                         title="Download File"
                       >
                         <Download size={15} />
-                      </a>
+                      </button>
                     ) : (
                       <button 
                         onClick={() => setShowUnlockModal(file.id)}

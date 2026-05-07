@@ -19,7 +19,8 @@ import {
   LogIn,
   CheckCircle,
   FileText,
-  FilterX
+  FilterX,
+  Shield
 } from "lucide-react";
 
 const actionConfig: Record<string, { label: string; bg: string; text: string; icon: any }> = {
@@ -35,6 +36,9 @@ const actionConfig: Record<string, { label: string; bg: string; text: string; ic
   LOGIN: { label: "Login", bg: "bg-indigo-50", text: "text-indigo-700", icon: LogIn },
   COMPLETE: { label: "Completed", bg: "bg-green-50", text: "text-green-700", icon: CheckCircle },
   VIEW_KEY: { label: "Reveal Key", bg: "bg-blue-100", text: "text-blue-800", icon: Key },
+  VIEW_AUDIT: { label: "Audit View", bg: "bg-slate-100", text: "text-slate-800", icon: Shield },
+  JOIN_CHAT: { label: "Joined Chat", bg: "bg-teal-100", text: "text-teal-800", icon: MessageSquare },
+  LOGOUT: { label: "Logout", bg: "bg-red-50", text: "text-red-700", icon: LogIn },
   default: { label: "Event", bg: "bg-gray-50", text: "text-gray-700", icon: FileText },
 };
 
@@ -70,6 +74,23 @@ export default function AuditLogPage() {
 
   useEffect(() => {
     fetchLogs();
+    // Log that audit trail is being viewed
+    const logView = async () => {
+      try {
+        await fetch("/api/audit/log", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "VIEW_AUDIT",
+            note: "Admin viewed the audit trail",
+            source: "UI"
+          })
+        });
+      } catch (e) {
+        console.error("Failed to log audit view");
+      }
+    };
+    logView();
   }, []);
 
   const getInitials = (name?: string | null) => {

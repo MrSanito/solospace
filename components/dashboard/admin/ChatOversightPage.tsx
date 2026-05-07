@@ -681,7 +681,23 @@ export default function ChatOversightPage({ initialThreadId, onBack }: ChatOvers
                       <p className="text-[11px] font-medium uppercase tracking-widest">Read Only Mode</p>
                     </div>
                     <button 
-                      onClick={() => setIsJoining(true)}
+                      onClick={async () => {
+                        setIsJoining(true);
+                        try {
+                          await fetch("/api/audit/log", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              action: "JOIN_CHAT",
+                              note: `Admin joined chat for lead: ${activeLead?.contactName}`,
+                              leadId: activeLead?.id,
+                              source: "UI"
+                            })
+                          });
+                        } catch (e) {
+                          console.error("Failed to log join chat");
+                        }
+                      }}
                       className="group flex items-center gap-2 bg-blue-600 text-white px-8 py-2.5 rounded-2xl text-xs font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95"
                     >
                       <MessageSquare size={14} className="group-hover:scale-110 transition-transform" />

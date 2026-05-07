@@ -104,12 +104,11 @@ export default function EmployeeLoginPage() {
         transition={{ duration: 0.7, ease: "easeOut" }}
         className="hidden lg:flex flex-col justify-between w-[38%] flex-shrink-0 relative overflow-hidden"
         style={{
-          // ✅ UPDATED: Soft light blue gradient so logo color stands out
           background:
-            "linear-gradient(160deg, #dbeafe 0%, #bfdbfe 25%, #93c5fd 55%, #bfdbfe 80%, #dbeafe 100%)",
+            "linear-gradient(135deg, rgba(167, 37, 165, 0.8) 0%, rgba(139, 28, 137, 0.9) 50%, rgba(107, 21, 105, 1) 100%)",
         }}
       >
-        {/* Stars — using indigo tint to show on light bg */}
+        {/* Stars */}
         {STARS.map((s, i) => (
           <motion.div
             key={i}
@@ -119,9 +118,9 @@ export default function EmployeeLoginPage() {
               left: `${s.left}%`,
               width: s.w,
               height: s.h,
-              background: "rgba(99, 102, 241, 0.45)",
+              background: "rgba(255, 255, 255, 0.4)",
             }}
-            animate={{ opacity: [0.08, 0.5, 0.08] }}
+            animate={{ opacity: [0.2, 0.7, 0.2] }}
             transition={{ duration: s.dur, repeat: Infinity, delay: s.delay, ease: "easeInOut" }}
           />
         ))}
@@ -132,8 +131,8 @@ export default function EmployeeLoginPage() {
             className="absolute inset-0"
             style={{
               background:
-                "radial-gradient(ellipse at 50% 115%, rgba(147,197,253,0.45) 0%, rgba(96,165,250,0.2) 45%, transparent 70%)",
-              filter: "blur(10px)",
+                "radial-gradient(ellipse at 50% 115%, rgba(167, 37, 165, 0.3) 0%, rgba(139, 28, 137, 0.1) 45%, transparent 70%)",
+              filter: "blur(20px)",
             }}
           />
           {/* Horizon arc */}
@@ -145,27 +144,25 @@ export default function EmployeeLoginPage() {
                 <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
               </filter>
               <radialGradient id="arcGrad" cx="50%" cy="100%" r="60%">
-                <stop offset="0%" stopColor="rgba(99,102,241,0.5)" />
-                <stop offset="100%" stopColor="rgba(59,130,246,0.1)" />
+                <stop offset="0%" stopColor="rgba(255,255,255,0.3)" />
+                <stop offset="100%" stopColor="rgba(255,255,255,0.05)" />
               </radialGradient>
             </defs>
             <ellipse cx="240" cy="200" rx="320" ry="130"
               fill="none" stroke="url(#arcGrad)" strokeWidth="1.5" filter="url(#glowArc)" />
-            <ellipse cx="240" cy="205" rx="300" ry="118"
-              fill="none" stroke="rgba(99,102,241,0.2)" strokeWidth="0.8" />
           </svg>
         </div>
 
         {/* Top content */}
-        <div className="relative z-10 p-10 pt-12">
+        <div className="relative z-10 p-10 pt-12 flex flex-col items-start text-left">
           {/* SPACE Logo */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="mb-16 flex justify-start"
+            className="mb-16"
           >
-            <img src="/logo.png" alt="Space Logo" className="h-38 w-auto object-contain" />
+            <img src="/logo.png" alt="Space Logo" className="h-43 w-auto object-contain brightness-0 invert" />
           </motion.div>
 
           {/* Welcome text */}
@@ -173,11 +170,12 @@ export default function EmployeeLoginPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
+            className="flex flex-col items-start"
           >
-            <h1 className="text-4xl font-bold mb-4 leading-tight" style={{ color: "#1e3a8a" }}>
-              Welcome Back!
+            <h1 className="text-5xl font-black mb-8 leading-tight text-white tracking-tighter">
+              Welcome in!
             </h1>
-            <p className="text-base leading-relaxed" style={{ color: "#3b82f6", maxWidth: "260px" }}>
+            <p className="text-xl leading-relaxed text-purple-100/80 max-w-[340px]">
               Sign in to your employee account to access your assigned leads and conversations.
             </p>
           </motion.div>
@@ -188,36 +186,36 @@ export default function EmployeeLoginPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
-          className="relative z-10 p-10 pb-8"
+          className="relative z-10 p-10 pb-8 flex flex-col items-start"
         >
           {/* Security badge */}
           <div
-            className="flex items-center gap-3 mb-6 p-4 rounded-2xl"
+            className="flex items-center gap-3 mb-6 p-5 rounded-3xl"
             style={{
-              background: "rgba(255,255,255,0.5)",
-              border: "1px solid rgba(147,197,253,0.5)",
-              backdropFilter: "blur(8px)",
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              backdropFilter: "blur(16px)",
             }}
           >
             <div
-              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+              className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
               style={{
-                background: "rgba(99,102,241,0.15)",
-                border: "1px solid rgba(99,102,241,0.3)",
+                background: "rgba(255,255,255,0.15)",
+                border: "1px solid rgba(255,255,255,0.2)",
               }}
             >
-              <svg className="w-5 h-5" style={{ color: "#4338ca" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
-            <div>
-              <p className="font-bold text-sm" style={{ color: "#1e3a8a" }}>Secure. Monitored. Logged.</p>
-              <p className="text-xs mt-0.5" style={{ color: "#3b82f6" }}>All activities are recorded and monitored.</p>
+            <div className="text-left">
+              <p className="font-bold text-sm text-white">Secure. Monitored. Logged.</p>
+              <p className="text-xs mt-1 text-purple-100/60">All activities are recorded and monitored.</p>
             </div>
           </div>
 
-          <p className="text-xs" style={{ color: "#93c5fd" }}>© 2024 SPACE. All rights reserved.</p>
+          <p className="text-xs text-white/30 font-medium">© 2024 SPACE. All rights reserved.</p>
         </motion.div>
       </motion.div>
 

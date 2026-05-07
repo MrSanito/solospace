@@ -20,6 +20,8 @@ export default function LeadDashboard() {
     const storedLead = localStorage.getItem("lead_info");
     if (storedLead) {
       setLeadData(JSON.parse(storedLead));
+    } else {
+      router.push("/login");
     }
     fetchChat();
   }, []);
@@ -30,6 +32,8 @@ export default function LeadDashboard() {
       if (res.ok) {
         const data = await res.json();
         setThread(data);
+      } else if (res.status === 401) {
+        router.push("/login");
       }
     } catch (e) {
       console.error("Failed to fetch chat");
@@ -170,7 +174,7 @@ export default function LeadDashboard() {
       console.error("Logout API failed");
     }
     localStorage.removeItem("lead_info");
-    router.push("/leadlogin");
+    router.push("/login");
   };
 
   const assignedOwner = thread?.lead?.owner || leadData?.owner;
@@ -453,6 +457,15 @@ export default function LeadDashboard() {
                                             )}
 
                                             <div className={`max-w-[68%] flex flex-col ${isLead ? "items-end" : "items-start"}`}>
+                                                {!isLead ? (
+                                                    <span className="text-[10px] font-bold text-blue-600 mb-1 px-1">
+                                                        {participant?.name || "Support Team"}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[10px] font-bold text-gray-500 mb-1 px-1">
+                                                        {leadData?.name || "You"}
+                                                    </span>
+                                                )}
                                                 <div className={`px-3.5 py-2.5 rounded-2xl text-xs leading-relaxed shadow-sm border ${
                                                     isLead 
                                                         ? "bg-blue-600 text-white border-blue-500 rounded-br-sm" 

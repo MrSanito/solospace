@@ -104,14 +104,28 @@ export async function GET() {
       }
     });
 
+    // Get Lead Owner info
+    const owner = thread.lead.owner;
+
     const decryptedThread = {
       ...thread,
-      participants,
+      participants: participants,
       sharedFiles: allFiles,
-      messages: thread.messages.map(m => ({
-        ...m,
-        content: decrypt(m.content)
-      }))
+      messages: thread.messages
+        .filter(m => !m.receiverId || m.receiverId === lead.leadId) // Only show messages for this lead
+        .map(m => {
+          const isUser = m.senderType === "USER";
+          const sender = isUser ? participants.find(p => p.id === m.senderId) : null;
+          
+          return {
+            ...m,
+            content: decrypt(m.content),
+            senderId: m.senderId,
+            senderName: isUser ? (sender?.name || owner?.name || "Company Support") : thread.lead.contactName,
+            senderAvatar: isUser ? (sender?.avatarUrl || owner?.avatarUrl || null) : null,
+            senderRole: isUser ? (sender?.role || owner?.role || "SUPPORT") : "LEAD"
+          };
+        })
     };
 
     return NextResponse.json(decryptedThread);
@@ -158,6 +172,7 @@ export async function POST(req: Request) {
         content: encrypt(content || ""),
         senderType: "LEAD",
         senderId: lead.leadId,
+        receiverId: thread.organizationId, // Send to organization/owner
         attachments: {
             create: attachments?.map((att: any) => ({
                 fileName: att.fileName,

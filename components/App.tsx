@@ -466,7 +466,7 @@ function OverviewPage({ setPage }: { setPage: (p: Page) => void }) {
 
             <motion.div variants={fadeInUp} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
               <p className="text-sm font-bold text-gray-800 mb-3">Integrations</p>
-              {[{ label: "CRM Sync", status: "Active" }, { label: "Chatbot", status: "Active" }].map(({ label, status }) => (
+              {[{ label: "Solo Space Sync", status: "Active" }, { label: "Chatbot", status: "Active" }].map(({ label, status }) => (
                 <div key={label} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                   <div className="flex items-center gap-2"><Activity size={12} className="text-gray-400" /><span className="text-xs text-gray-700">{label}</span></div>
                   <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{status}</span>

@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/components/auth/AuthContext";
 import toast from "react-hot-toast";
 import { UserPlus, Mail, Lock, User as UserIcon, Building2 } from "lucide-react";
@@ -13,8 +13,30 @@ export default function RegisterPage() {
     password: "",
     organizationName: ""
   });
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  // Strict Redirect: If already logged in, move to dashboard
+  useEffect(() => {
+    if (!authLoading) {
+      if (user) {
+        router.push("/dashboard");
+      } else {
+        const leadInfo = localStorage.getItem("lead_info");
+        if (leadInfo) {
+          try {
+            const lead = JSON.parse(leadInfo);
+            if (lead.id) {
+              router.push(`/${lead.id}/dashboard`);
+            }
+          } catch (e) {
+            console.error("Invalid lead_info in storage", e);
+          }
+        }
+      }
+    }
+  }, [user, authLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +81,7 @@ export default function RegisterPage() {
               <UserPlus className="text-white" size={32} />
             </div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">
-              Chat<span className="text-blue-600">CRM</span>
+              Solo<span className="text-blue-600">Space</span>
             </h1>
             <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] mt-3">
               Enterprise Onboarding
@@ -107,7 +129,7 @@ export default function RegisterPage() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-4 py-3.5 text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all placeholder:text-slate-300"
-                  placeholder="admin@chatcrm.com"
+                  placeholder="admin@solospace.com"
                 />
               </div>
             </div>

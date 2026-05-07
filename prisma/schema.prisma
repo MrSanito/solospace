@@ -275,6 +275,7 @@ model ChatMessage {
   threadId       String
   senderId       String?    
   senderType     SenderType
+  receiverId     String?
   content        String
   createdAt      DateTime   @default(now())
   

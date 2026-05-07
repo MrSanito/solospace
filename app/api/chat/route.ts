@@ -21,6 +21,7 @@ export async function GET(req: Request) {
     const thread = await prisma.chatThread.findUnique({
       where: { leadId },
       include: {
+        lead: true,
         messages: {
           orderBy: { createdAt: "asc" },
           include: { attachments: true }
@@ -28,11 +29,21 @@ export async function GET(req: Request) {
       }
     });
 
+    const userIds = Array.from(new Set(thread?.messages.filter(m => m.senderType === "USER" && m.senderId).map(m => m.senderId as string) || []));
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true, role: true, avatarUrl: true }
+    });
+    const userMap = Object.fromEntries(users.map(u => [u.id, u]));
+
     const safeThread = thread ? {
       ...thread,
       messages: thread.messages.map(m => ({
         ...m,
         content: decrypt(m.content),
+        senderName: m.senderType === "USER" ? userMap[m.senderId!]?.name : thread.lead.contactName,
+        senderRole: m.senderType === "USER" ? userMap[m.senderId!]?.role : "LEAD",
+        senderAvatar: m.senderType === "USER" ? userMap[m.senderId!]?.avatarUrl : null,
         attachments: m.attachments.map(att => ({
           ...att,
           fileUrl: att.isRestricted ? (null as string | null) : att.fileUrl,
@@ -51,7 +62,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { leadId, content, senderType, senderId, attachments } = body;
+    const { leadId, content, senderType, senderId, receiverId, attachments } = body;
     console.log("[OversightChat POST] Received:", { leadId, senderType, content, attachmentsCount: attachments?.length });
 
     // Check if at least one of content or attachments is present
@@ -92,6 +103,7 @@ export async function POST(req: Request) {
         content: encrypt(content || ""),
         senderType,
         senderId: senderId || null,
+        receiverId: receiverId || leadId, // Default to leadId if not specified
         attachments: {
             create: body.attachments?.map((att: any) => ({
                 fileName: att.fileName,

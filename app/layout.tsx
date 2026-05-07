@@ -17,8 +17,8 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Chat CRM | Enterprise Messaging Portal",
-  description: "A premium, high-precision Chat CRM for lead communication.",
+  title: "Solo Space | Enterprise Messaging Portal",
+  description: "A premium, high-precision Solo Space for lead communication.",
 };
 
 export default function RootLayout({

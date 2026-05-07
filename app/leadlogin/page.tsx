@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { Lock } from "lucide-react";
 
 export default function LeadLoginPage() {
   const [email, setEmail] = useState("");
@@ -281,6 +282,14 @@ export default function LeadLoginPage() {
              <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">
               Don't have a portal key? <br/>
               <span className="text-blue-500 mt-1 block">Contact your representative</span>
+             </p>
+             <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mt-4"> 
+              <span>
+
+              <Lock className="w-4 h-4 text-blue-500" />
+             Your conversations and data are protected
+             All communication is secure and monitored.
+              </span>
              </p>
           </motion.div>
         </motion.div>

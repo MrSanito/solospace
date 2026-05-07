@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/components/auth/AuthContext";
 import toast from "react-hot-toast";
@@ -22,8 +22,29 @@ export default function OwnerLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, user, loading: authLoading } = useAuth();
   const router = useRouter();
+  
+  // Strict Redirect: If already logged in, move to dashboard
+  useEffect(() => {
+    if (!authLoading) {
+      if (user) {
+        router.push("/dashboard");
+      } else {
+        const leadInfo = localStorage.getItem("lead_info");
+        if (leadInfo) {
+          try {
+            const lead = JSON.parse(leadInfo);
+            if (lead.id) {
+              router.push(`/${lead.id}/dashboard`);
+            }
+          } catch (e) {
+            console.error("Invalid lead_info in storage", e);
+          }
+        }
+      }
+    }
+  }, [user, authLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

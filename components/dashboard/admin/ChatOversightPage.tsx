@@ -61,6 +61,7 @@ export default function ChatOversightPage({ initialThreadId, onBack }: ChatOvers
   const [detailsOpen, setDetailsOpen] = useState(true);
   const [sharedTab, setSharedTab] = useState<"accessible" | "restricted">("accessible");
   const [isJoining, setIsJoining] = useState(false);
+  const [isInternal, setIsInternal] = useState(false);
 
 
   const isPrivileged = currentUser?.role === "ORG_ADMIN" || currentUser?.role === "MANAGER";
@@ -186,11 +187,13 @@ export default function ChatOversightPage({ initialThreadId, onBack }: ChatOvers
           content: newMessage,
           senderType: "USER",
           senderId: currentUser?.id,
+          receiverId: isInternal ? "INTERNAL" : activeThread.leadId,
           attachments: attachments || [],
         }),
       });
       if (res.ok) {
         setNewMessage("");
+        setIsInternal(false);
         fetchThreads();
       }
     } catch (error) {
@@ -459,8 +462,14 @@ export default function ChatOversightPage({ initialThreadId, onBack }: ChatOvers
                           className={`flex ${isLead ? "justify-start" : "justify-end"} items-end gap-2`}
                         >
                           {!isLead && (
-                            <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0 mb-0.5 order-last" title={m.senderName || "Support"}>
-                              {(m.senderName || "S").charAt(0)}
+                            <div className="flex flex-col items-center gap-1 order-last shrink-0">
+                              <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center shadow-sm" title={`${m.senderName} (${m.senderRole})`}>
+                                {m.senderAvatar ? (
+                                  <img src={m.senderAvatar} alt="" className="w-full h-full rounded-full object-cover" />
+                                ) : (
+                                  (m.senderName || "S").charAt(0)
+                                )}
+                              </div>
                             </div>
                           )}
 
@@ -471,6 +480,22 @@ export default function ChatOversightPage({ initialThreadId, onBack }: ChatOvers
                           )}
 
                           <div className={`max-w-[68%] flex flex-col ${isLead ? "items-start" : "items-end"}`}>
+                            {isLead && (
+                              <span className="text-[10px] font-black uppercase tracking-wider text-gray-500 mb-1 px-1">
+                                {activeLead?.contactName}
+                              </span>
+                            )}
+                            {!isLead && m.senderName && (
+                              <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 mb-1 flex items-center gap-2 px-1">
+                                {m.senderName} 
+                                <span className="bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded text-[8px] font-bold">{m.senderRole}</span>
+                                {m.receiverId !== activeThread.leadId && (
+                                  <span className="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded text-[8px] font-bold flex items-center gap-1 border border-amber-200">
+                                    <Lock size={8} /> INTERNAL
+                                  </span>
+                                )}
+                              </span>
+                            )}
                             <div
                               className={`px-3.5 py-2.5 rounded-2xl text-xs leading-relaxed ${
                                 isLead
@@ -609,17 +634,36 @@ export default function ChatOversightPage({ initialThreadId, onBack }: ChatOvers
                       {uploading ? <span className="loading loading-spinner loading-xs" /> : <Paperclip size={18} />}
                     </button>
 
-                    <div className="flex-1 flex items-center bg-gray-100 rounded-2xl px-4 py-2.5 gap-2">
-                      <input
-                        type="text"
-                        value={newMessage}
-                        onChange={e => setNewMessage(e.target.value)}
-                        placeholder="Type your message..."
-                        className="flex-1 bg-transparent text-xs text-gray-700 placeholder:text-gray-400 outline-none"
-                      />
-                      <button type="button" className="text-gray-400 hover:text-gray-600 shrink-0">
-                        <Smile size={17} />
-                      </button>
+                    <div className="flex flex-col gap-2 flex-1">
+                      {isPrivileged && (
+                        <div className="flex items-center gap-2 mb-1 px-1">
+                          <button
+                            type="button"
+                            onClick={() => setIsInternal(!isInternal)}
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded transition-all flex items-center gap-1 ${
+                              isInternal 
+                                ? "bg-amber-100 text-amber-700 border border-amber-200 shadow-sm" 
+                                : "bg-gray-100 text-gray-500 border border-gray-200"
+                            }`}
+                          >
+                            <Lock size={10} /> {isInternal ? "INTERNAL NOTE" : "PUBLIC REPLY"}
+                          </button>
+                        </div>
+                      )}
+                      <div className={`flex items-center rounded-2xl px-4 py-2.5 gap-2 transition-all border ${
+                        isInternal ? "bg-amber-50/50 border-amber-100" : "bg-gray-100 border-transparent"
+                      }`}>
+                        <input
+                          type="text"
+                          value={newMessage}
+                          onChange={e => setNewMessage(e.target.value)}
+                          placeholder={isInternal ? "Type an internal note..." : "Type your message to the lead..."}
+                          className="flex-1 bg-transparent text-xs text-gray-700 placeholder:text-gray-400 outline-none"
+                        />
+                        <button type="button" className="text-gray-400 hover:text-gray-600 shrink-0">
+                          <Smile size={17} />
+                        </button>
+                      </div>
                     </div>
 
                     <button

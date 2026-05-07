@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { createAuditLog } from "@/lib/audit";
+import { checkPermission, getDataScope } from "@/lib/rbac";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-me";
 
@@ -28,15 +29,24 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Role-based filtering:
-    // SALES_REP: only their own leads
-    // MANAGER/ORG_ADMIN: all leads in organization
+    // RBAC: Check permission to view leads
+    const hasPermission = await checkPermission(user.id, "VIEW_LEADS");
+    if (!hasPermission) {
+      return NextResponse.json({ error: "Forbidden: No permission to view leads" }, { status: 403 });
+    }
+
+    // Role-based filtering via Data Scope
+    const { scope } = await getDataScope(user.id);
+    
     const whereClause: any = {
       organizationId: user.organizationId,
     };
 
-    if (user.role === "SALES_REP") {
-      whereClause.ownerId = decoded.userId;
+    if (scope === "OWN") {
+      whereClause.ownerId = user.id;
+    } else if (scope === "TEAM") {
+      // For now, TEAM behaves like ALL in this flat structure, 
+      // but in a more complex app we'd filter by team membership.
     }
 
     const leads = await prisma.lead.findMany({
@@ -79,6 +89,12 @@ export async function POST(req: Request) {
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // RBAC: Check permission to create leads
+    const canCreate = await checkPermission(user.id, "MANAGE_LEADS");
+    if (!canCreate) {
+      return NextResponse.json({ error: "Forbidden: No permission to create leads" }, { status: 403 });
     }
 
     // Check if lead already exists with this email or phone

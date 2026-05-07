@@ -5,7 +5,7 @@ import { createAuditLog } from "@/lib/audit";
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password, initials, role, organizationName, organizationId, managerId } = await req.json();
+    const { name, email, password, initials, role, organizationName, organizationId, managerId, customRoleId } = await req.json();
 
     if (!email || !password || !name) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -51,6 +51,7 @@ export async function POST(req: Request) {
           role: role || (organizationId ? "SALES_REP" : "ORG_ADMIN"),
           organizationId: targetOrgId,
           managerId: managerId || null,
+          customRoleId: customRoleId || null,
         },
       });
 

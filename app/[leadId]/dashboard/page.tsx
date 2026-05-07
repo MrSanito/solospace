@@ -33,6 +33,7 @@ export default function LeadDashboard() {
         const data = await res.json();
         setThread(data);
       } else if (res.status === 401) {
+        localStorage.removeItem("lead_info");
         router.push("/login");
       }
     } catch (e) {

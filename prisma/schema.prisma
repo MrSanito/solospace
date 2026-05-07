@@ -27,6 +27,7 @@ model Organization {
   sidebarFilters SidebarFilter[]
   chatThreads  ChatThread[]
   driveFiles   DriveFile[]
+  customRoles  CustomRole[]
 
   securityIncidents SecurityEWS[]
   @@map("organizations")
@@ -60,6 +61,8 @@ model User {
   team           Team?         @relation("TeamMembers", fields: [teamId], references: [id])
   sidebarFilters SidebarFilter[] @relation("SidebarFilterCreator")
   driveFiles     DriveFile[]
+  customRoleId   String?
+  customRole     CustomRole?   @relation("UserCustomRole", fields: [customRoleId], references: [id])
 
   @@index([organizationId])
   securityIncidents  SecurityEWS[]
@@ -300,6 +303,25 @@ enum Role {
   CEO
 }
 
+enum PermissionKey {
+  VIEW_LEADS
+  MANAGE_LEADS
+  CHAT_ACCESS
+  FILE_VIEW
+  FILE_UPLOAD
+  FILE_DOWNLOAD
+  FILE_DELETE
+  USER_MANAGEMENT
+  ACCESS_CONTROL
+  AUDIT_LOGS
+}
+
+enum DataScopeType {
+  ALL
+  TEAM
+  OWN
+}
+
 enum LeadPriority {
   HIGH
   MEDIUM
@@ -511,4 +533,49 @@ model SecurityEWS {
   @@index([organizationId])
   @@index([userId])
   @@map("security_ews")
+}
+
+model CustomRole {
+  id             String           @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  icon           String           @default("user")
+  color          String           @default("gray")
+  orderIndex     Int              @default(0)
+  isSystem       Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+  users          User[]           @relation("UserCustomRole")
+  permissions    RolePermission[]
+  dataScope      DataAccessScope?
+
+  @@unique([name, organizationId])
+  @@index([organizationId])
+  @@map("custom_roles")
+}
+
+model RolePermission {
+  id         String        @id @default(uuid())
+  roleId     String
+  permission PermissionKey
+  allowed    Boolean       @default(false)
+
+  role       CustomRole    @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permission])
+  @@map("role_permissions")
+}
+
+model DataAccessScope {
+  id        String        @id @default(uuid())
+  roleId    String        @unique
+  scopeType DataScopeType @default(ALL)
+  teamId    String?
+
+  role      CustomRole    @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@map("data_access_scopes")
 }

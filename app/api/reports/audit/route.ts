@@ -3,6 +3,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { decrypt } from "@/lib/encryption";
+import { checkPermission } from "@/lib/rbac";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-me";
 
@@ -15,11 +16,14 @@ export async function GET(req: NextRequest) {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: { organizationId: true, role: true },
+      select: { id: true, organizationId: true, role: true },
     });
     
-    if (!user || (user.role !== "ORG_ADMIN" && user.role !== "MANAGER")) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+    const hasPermission = await checkPermission(user.id, "AUDIT_LOGS");
+    if (!hasPermission) {
+      return NextResponse.json({ error: "Forbidden: No permission to view audit logs" }, { status: 403 });
     }
 
     if (!prisma.auditLog) {

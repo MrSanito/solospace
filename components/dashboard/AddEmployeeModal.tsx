@@ -1,5 +1,5 @@
 "use client"
-import { X, User, Mail, Lock, ChevronDown, AlertCircle } from "lucide-react";
+import { X, User, Mail, Lock, ChevronDown, AlertCircle, ShieldCheck } from "lucide-react";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
@@ -11,6 +11,13 @@ interface TeamMember {
   role: string;
 }
 
+interface CustomRole {
+  id: string;
+  name: string;
+  isSystem: boolean;
+  icon: string;
+}
+
 interface AddEmployeeModalProps {
   onClose: () => void;
   preselectedManagerId?: string;
@@ -20,39 +27,55 @@ interface AddEmployeeModalProps {
 export default function AddEmployeeModal({ onClose, preselectedManagerId, preselectedManagerName }: AddEmployeeModalProps) {
   const { user: currentUser } = useAuth();
   const [managers, setManagers] = useState<TeamMember[]>([]);
-  const [fetchingManagers, setFetchingManagers] = useState(true);
+  const [roles, setRoles] = useState<CustomRole[]>([]);
+  const [fetchingData, setFetchingData] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     role: "SALES_REP",
+    customRoleId: "",
     managerId: preselectedManagerId || "",
     organizationId: currentUser?.organizationId || ""
   });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchTeam = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch("/api/team");
-        if (res.ok) {
-          const data: TeamMember[] = await res.json();
-          // Managers and Admins can be report-to targets
+        const [teamRes, rolesRes] = await Promise.all([
+          fetch("/api/team"),
+          fetch("/api/roles")
+        ]);
+
+        if (teamRes.ok) {
+          const data: TeamMember[] = await teamRes.json();
           const possibleManagers = data.filter(m => m.role === "MANAGER" || m.role === "ORG_ADMIN");
           setManagers(possibleManagers);
           
-          // Auto-select current user if they are a manager/admin and no manager is preselected
           if (!formData.managerId && currentUser && (currentUser.role === "MANAGER" || currentUser.role === "ORG_ADMIN")) {
             setFormData(prev => ({ ...prev, managerId: currentUser.id }));
           }
         }
+
+        if (rolesRes.ok) {
+          const rolesData = await rolesRes.json();
+          const rolesList = rolesData.roles || [];
+          setRoles(rolesList);
+          
+          // Default to SALES_REP custom role if found
+          const salesRepRole = rolesList.find((r: any) => r.name === "SALES_REP" || r.name === "Sales Specialist");
+          if (salesRepRole) {
+            setFormData(prev => ({ ...prev, customRoleId: salesRepRole.id }));
+          }
+        }
       } catch (err) {
-        console.error("Failed to load managers");
+        console.error("Failed to load data", err);
       } finally {
-        setFetchingManagers(false);
+        setFetchingData(false);
       }
     };
-    fetchTeam();
+    fetchData();
   }, [currentUser]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -108,22 +131,33 @@ export default function AddEmployeeModal({ onClose, preselectedManagerId, presel
         <form onSubmit={handleSubmit} className="p-8 space-y-5">
           {/* Role Selection */}
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Designation Role</label>
-            <div className="flex p-1 bg-slate-100 rounded-2xl">
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, role: "SALES_REP" })}
-                className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-wider rounded-xl transition-all ${formData.role === "SALES_REP" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Access Profile (Role)</label>
+            <div className="relative">
+              <select
+                value={formData.customRoleId}
+                onChange={(e) => {
+                  const roleId = e.target.value;
+                  const selectedRole = roles.find(r => r.id === roleId);
+                  setFormData({ 
+                    ...formData, 
+                    customRoleId: roleId,
+                    // Map legacy role for backward compatibility
+                    role: selectedRole?.name === "MANAGER" || selectedRole?.name === "ORG_ADMIN" || selectedRole?.name === "CEO" 
+                      ? selectedRole.name 
+                      : "SALES_REP"
+                  });
+                }}
+                className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3.5 text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all appearance-none pr-10"
+                disabled={fetchingData}
               >
-                Sales Rep
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, role: "MANAGER" })}
-                className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-wider rounded-xl transition-all ${formData.role === "MANAGER" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
-              >
-                Manager
-              </button>
+                <option value="">Select a Role...</option>
+                {roles.map(r => (
+                  <option key={r.id} value={r.id}>{r.name} {r.isSystem ? "(System)" : ""}</option>
+                ))}
+              </select>
+              <div className="absolute right-4 top-4 pointer-events-none text-slate-400">
+                <ShieldCheck size={16} />
+              </div>
             </div>
           </div>
 
@@ -182,7 +216,7 @@ export default function AddEmployeeModal({ onClose, preselectedManagerId, presel
                 value={formData.managerId}
                 onChange={(e) => setFormData({ ...formData, managerId: e.target.value })}
                 className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3.5 text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all appearance-none pr-10"
-                disabled={fetchingManagers}
+                disabled={fetchingData}
               >
                 <option value="">Select a Manager...</option>
                 {managers.map(m => (
@@ -194,7 +228,7 @@ export default function AddEmployeeModal({ onClose, preselectedManagerId, presel
               </div>
             </div>
             
-            {formData.role === "SALES_REP" && managers.length === 0 && !fetchingManagers && (
+            {formData.role === "SALES_REP" && managers.length === 0 && !fetchingData && (
               <div className="flex items-start gap-2 p-3 bg-red-50 rounded-xl mt-2 border border-red-100">
                 <AlertCircle size={14} className="text-red-500 mt-0.5 shrink-0" />
                 <p className="text-[10px] font-bold text-red-600 leading-tight uppercase tracking-wider">

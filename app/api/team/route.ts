@@ -36,6 +36,15 @@ export async function GET() {
         role: true,
         initials: true,
         managerId: true,
+        customRoleId: true,
+        customRole: {
+          select: {
+            id: true,
+            name: true,
+            icon: true,
+            color: true
+          }
+        },
         _count: {
           select: { ownedLeads: true }
         }

@@ -12,6 +12,13 @@ interface TeamMember {
   email: string;
   initials: string;
   managerId: string | null;
+  customRoleId: string | null;
+  customRole: {
+    id: string;
+    name: string;
+    icon: string;
+    color: string;
+  } | null;
   _count?: {
     ownedLeads: number;
   };
@@ -27,6 +34,8 @@ export default function TeamView({ defaultView = "graph" }: TeamViewProps) {
   const [loading, setLoading] = useState(true);
   const [viewType, setViewType] = useState<"grid" | "graph">(defaultView);
   const [addingSubTo, setAddingSubTo] = useState<{ id: string, name: string } | null>(null);
+  const [editingRole, setEditingRole] = useState<TeamMember | null>(null);
+  const [availableRoles, setAvailableRoles] = useState<any[]>([]);
 
   const fetchTeam = async () => {
     try {
@@ -46,7 +55,40 @@ export default function TeamView({ defaultView = "graph" }: TeamViewProps) {
 
   useEffect(() => {
     fetchTeam();
+    fetchRoles();
   }, []);
+
+  const fetchRoles = async () => {
+    try {
+      const res = await fetch("/api/roles");
+      if (res.ok) {
+        const data = await res.json();
+        setAvailableRoles(data.roles || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch roles");
+    }
+  };
+
+  const handleUpdateRole = async (memberId: string, customRoleId: string) => {
+    try {
+      const res = await fetch(`/api/users/${memberId}/role`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customRoleId }),
+      });
+
+      if (res.ok) {
+        toast.success("Role updated successfully");
+        fetchTeam();
+        setEditingRole(null);
+      } else {
+        toast.error("Failed to update role");
+      }
+    } catch (error) {
+      toast.error("Connection error");
+    }
+  };
 
   const renderMemberNode = (member: TeamMember, level: number = 0) => {
     const subordinates = members.filter(m => m.managerId === member.id);
@@ -93,14 +135,8 @@ export default function TeamView({ defaultView = "graph" }: TeamViewProps) {
                   <h3 className={`font-bold text-sm truncate w-40 ${isOrgAdmin ? 'text-white' : 'text-slate-900'}`}>
                     {member.name}
                   </h3>
-                  <p className={`text-[9px] font-black uppercase tracking-widest mt-1 px-2 py-0.5 rounded-full inline-block ${
-                    isOrgAdmin 
-                      ? 'bg-amber-400/20 text-amber-400' 
-                      : isManager 
-                        ? 'bg-blue-600/10 text-blue-600' 
-                        : 'bg-slate-200/50 text-slate-500'
-                  }`}>
-                    {isOrgAdmin ? 'Org Director' : isManager ? 'Team Leader' : 'Sales Representative'}
+                  <p className={`text-[10px] font-medium ${isOrgAdmin ? 'text-white/60' : 'text-slate-400'}`}>
+                    {member.customRole?.name || (isOrgAdmin ? 'Org Director' : isManager ? 'Team Leader' : 'Sales Representative')}
                   </p>
                 </div>
               </div>
@@ -243,9 +279,12 @@ export default function TeamView({ defaultView = "graph" }: TeamViewProps) {
                 <div className={`w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center text-xl font-black shadow-inner`}>
                   {member.initials}
                 </div>
-                <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${member.role === 'MANAGER' ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-500'}`}>
-                  {member.role === 'MANAGER' ? 'Supervisor' : 'Specialist'}
-                </span>
+                <button 
+                  onClick={() => setEditingRole(member)}
+                  className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full transition-all hover:ring-2 hover:ring-blue-200 ${member.customRole ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-500'}`}
+                >
+                  {member.customRole?.name || 'Assign Role'}
+                </button>
               </div>
 
               <div className="space-y-4">
@@ -287,6 +326,48 @@ export default function TeamView({ defaultView = "graph" }: TeamViewProps) {
         </div>
       ) : (
         renderGraph()
+      )}
+
+      {editingRole && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setEditingRole(null)} />
+          <div className="relative bg-white w-full max-w-sm rounded-[2rem] shadow-2xl p-8" onClick={e => e.stopPropagation()}>
+            <h2 className="text-xl font-bold text-slate-900 mb-2">Change Role</h2>
+            <p className="text-xs text-slate-500 mb-6">Updating access profile for <span className="font-bold text-slate-900">{editingRole.name}</span></p>
+            
+            <div className="space-y-3">
+              {availableRoles.map(role => (
+                <button
+                  key={role.id}
+                  onClick={() => handleUpdateRole(editingRole.id, role.id)}
+                  className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all hover:border-blue-500 group ${editingRole.customRoleId === role.id ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-100'}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${editingRole.customRoleId === role.id ? 'bg-blue-600 text-white' : 'bg-white text-slate-400 group-hover:text-blue-600'}`}>
+                      <ShieldCheck size={18} />
+                    </div>
+                    <div className="text-left">
+                      <p className={`text-sm font-bold ${editingRole.customRoleId === role.id ? 'text-blue-900' : 'text-slate-700'}`}>{role.name}</p>
+                      {role.isSystem && <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">System Profile</p>}
+                    </div>
+                  </div>
+                  {editingRole.customRoleId === role.id && (
+                    <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white">
+                      <ChevronRight size={14} />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            <button 
+              onClick={() => setEditingRole(null)}
+              className="w-full mt-6 py-4 bg-slate-100 text-slate-500 font-bold text-[10px] uppercase tracking-widest rounded-2xl hover:bg-slate-200 transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
 
       {addingSubTo && (

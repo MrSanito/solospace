@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function LeadLoginPage() {
   const [email, setEmail] = useState("");
@@ -85,18 +86,15 @@ export default function LeadLoginPage() {
             transition={{ delay: 0.3 }}
             className="flex items-center gap-2 mb-20"
           >
-            <span
-              className="text-4xl font-black tracking-widest"
-              style={{
-                color: "#ffffff",
-                textShadow: "0 0 20px rgba(255,255,255,0.4)",
-                fontFamily: "'Orbitron', sans-serif",
-                letterSpacing: "0.3em",
-              }}
-            >
-              SPACE
-            </span>
-            <span className="text-blue-200 font-bold uppercase tracking-widest text-xs mt-2">Portal</span>
+            <Image 
+              src="/logo.png" 
+              alt="Logo" 
+              width={180} 
+              height={60} 
+              className="object-contain brightness-0 invert"
+              priority
+            />
+            <span className="text-blue-200 font-bold uppercase tracking-widest text-xs mt-2 ml-2">Portal</span>
           </motion.div>
 
           <motion.div
@@ -147,10 +145,14 @@ export default function LeadLoginPage() {
             transition={{ type: "spring", stiffness: 200, delay: 0.4 }}
             className="flex justify-center mb-6"
           >
-            <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center border-2 border-blue-100">
-              <svg className="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-              </svg>
+            <div className="w-24 h-24 rounded-3xl bg-white shadow-xl shadow-blue-100 flex items-center justify-center border border-blue-50 p-4">
+              <Image 
+                src="/logo.png" 
+                alt="Logo" 
+                width={80} 
+                height={80} 
+                className="object-contain"
+              />
             </div>
           </motion.div>
 
@@ -160,7 +162,7 @@ export default function LeadLoginPage() {
             transition={{ delay: 0.5 }}
             className="text-center mb-8"
           >
-            <h2 className="text-3xl font-black text-gray-800 mb-2 tracking-tighter uppercase">Lead Portal Access</h2>
+            <h2 className="text-3xl font-black text-gray-800 mb-2 tracking-tighter uppercase">Customer Portal Access</h2>
             <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Sign in with your registered email and portal key</p>
           </motion.div>
 

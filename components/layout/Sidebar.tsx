@@ -7,6 +7,7 @@ import {
 import SidebarItem from "./SidebarItem";
 import { navItems } from "./navItems";
 import { useAuth } from "@/components/auth/AuthContext";
+import Image from "next/image";
 
 export type PageId =
   | "overview"
@@ -44,12 +45,13 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
           transition={{ delay: 0.2 }}
           className="flex items-center gap-2"
         >
-          <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
-            <span className="text-white font-black text-sm">S+</span>
-          </div>
-          <span className="text-white font-bold text-lg tracking-wider uppercase">
-            Space
-          </span>
+          <Image 
+            src="/logo.png" 
+            alt="Logo" 
+            width={120} 
+            height={40} 
+            className="object-contain brightness-0 invert"
+          />
         </motion.div>
       </div>
 

@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/components/auth/AuthContext";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 const STARS = Array.from({ length: 60 }, (_, i) => ({
   id: i,
@@ -164,25 +165,14 @@ export default function OwnerLogin() {
             transition={{ delay: 0.2 }}
             className="mb-3"
           >
-            <svg width="160" height="52" viewBox="0 0 160 52" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <ellipse cx="80" cy="28" rx="68" ry="18" stroke="url(#orbitGrad)" strokeWidth="1.5" fill="none" />
-              <circle cx="80" cy="46" r="3" fill="#7c3aed" />
-              <path d="M128 8 L129.5 4 L131 8 L135 9.5 L131 11 L129.5 15 L128 11 L124 9.5Z" fill="#818cf8" />
-              <path d="M18 14 L19 11 L20 14 L23 15 L20 16 L19 19 L18 16 L15 15Z" fill="#6366f1" />
-              <text x="80" y="34" textAnchor="middle" fontFamily="'Arial Black', sans-serif" fontSize="28" fontWeight="900" letterSpacing="4" fill="url(#textGrad)">SPACE</text>
-              <defs>
-                <linearGradient id="orbitGrad" x1="12" y1="28" x2="148" y2="28" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#4f46e5" />
-                  <stop offset="50%" stopColor="#7c3aed" />
-                  <stop offset="100%" stopColor="#3b82f6" />
-                </linearGradient>
-                <linearGradient id="textGrad" x1="40" y1="20" x2="120" y2="40" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#818cf8" />
-                  <stop offset="50%" stopColor="#a5b4fc" />
-                  <stop offset="100%" stopColor="#60a5fa" />
-                </linearGradient>
-              </defs>
-            </svg>
+            <Image 
+              src="/logo.png" 
+              alt="Logo" 
+              width={160} 
+              height={52} 
+              className="object-contain brightness-0 invert"
+              priority
+            />
           </motion.div>
 
           {/* Tagline */}

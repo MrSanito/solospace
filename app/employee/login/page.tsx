@@ -81,7 +81,6 @@ export default function EmployeeLoginPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        // Note: Backend already gates role to SALES_REP for EMPLOYEE loginType
         toast.success("Employee Authentication Successful!");
         login(data.user);
         router.push("/dashboard");
@@ -105,17 +104,24 @@ export default function EmployeeLoginPage() {
         transition={{ duration: 0.7, ease: "easeOut" }}
         className="hidden lg:flex flex-col justify-between w-[38%] flex-shrink-0 relative overflow-hidden"
         style={{
+          // ✅ UPDATED: Soft light blue gradient so logo color stands out
           background:
-            "linear-gradient(160deg, #1a237e 0%, #283593 20%, #1565c0 45%, #0d47a1 65%, #0a1976 100%)",
+            "linear-gradient(160deg, #dbeafe 0%, #bfdbfe 25%, #93c5fd 55%, #bfdbfe 80%, #dbeafe 100%)",
         }}
       >
-        {/* Stars */}
+        {/* Stars — using indigo tint to show on light bg */}
         {STARS.map((s, i) => (
           <motion.div
             key={i}
-            className="absolute rounded-full bg-white"
-            style={{ top: `${s.top}%`, left: `${s.left}%`, width: s.w, height: s.h }}
-            animate={{ opacity: [0.15, 0.9, 0.15] }}
+            className="absolute rounded-full"
+            style={{
+              top: `${s.top}%`,
+              left: `${s.left}%`,
+              width: s.w,
+              height: s.h,
+              background: "rgba(99, 102, 241, 0.45)",
+            }}
+            animate={{ opacity: [0.08, 0.5, 0.08] }}
             transition={{ duration: s.dur, repeat: Infinity, delay: s.delay, ease: "easeInOut" }}
           />
         ))}
@@ -126,8 +132,8 @@ export default function EmployeeLoginPage() {
             className="absolute inset-0"
             style={{
               background:
-                "radial-gradient(ellipse at 50% 110%, rgba(30,100,255,0.55) 0%, rgba(10,50,200,0.25) 45%, transparent 70%)",
-              filter: "blur(6px)",
+                "radial-gradient(ellipse at 50% 115%, rgba(147,197,253,0.45) 0%, rgba(96,165,250,0.2) 45%, transparent 70%)",
+              filter: "blur(10px)",
             }}
           />
           {/* Horizon arc */}
@@ -135,24 +141,24 @@ export default function EmployeeLoginPage() {
             className="absolute bottom-0">
             <defs>
               <filter id="glowArc">
-                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feGaussianBlur stdDeviation="4" result="blur" />
                 <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
               </filter>
               <radialGradient id="arcGrad" cx="50%" cy="100%" r="60%">
-                <stop offset="0%" stopColor="rgba(100,180,255,0.9)" />
-                <stop offset="100%" stopColor="rgba(30,80,200,0.2)" />
+                <stop offset="0%" stopColor="rgba(99,102,241,0.5)" />
+                <stop offset="100%" stopColor="rgba(59,130,246,0.1)" />
               </radialGradient>
             </defs>
             <ellipse cx="240" cy="200" rx="320" ry="130"
               fill="none" stroke="url(#arcGrad)" strokeWidth="1.5" filter="url(#glowArc)" />
             <ellipse cx="240" cy="205" rx="300" ry="118"
-              fill="none" stroke="rgba(80,160,255,0.3)" strokeWidth="0.8" />
+              fill="none" stroke="rgba(99,102,241,0.2)" strokeWidth="0.8" />
           </svg>
         </div>
 
         {/* Top content */}
         <div className="relative z-10 p-10 pt-12">
-          {/* SPACE Logo SVG */}
+          {/* SPACE Logo */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -168,8 +174,10 @@ export default function EmployeeLoginPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <h1 className="text-4xl font-bold text-white mb-4 leading-tight">Welcome Back!</h1>
-            <p className="text-blue-100 text-base leading-relaxed" style={{ maxWidth: "260px" }}>
+            <h1 className="text-4xl font-bold mb-4 leading-tight" style={{ color: "#1e3a8a" }}>
+              Welcome Back!
+            </h1>
+            <p className="text-base leading-relaxed" style={{ color: "#3b82f6", maxWidth: "260px" }}>
               Sign in to your employee account to access your assigned leads and conversations.
             </p>
           </motion.div>
@@ -186,30 +194,30 @@ export default function EmployeeLoginPage() {
           <div
             className="flex items-center gap-3 mb-6 p-4 rounded-2xl"
             style={{
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.12)",
+              background: "rgba(255,255,255,0.5)",
+              border: "1px solid rgba(147,197,253,0.5)",
               backdropFilter: "blur(8px)",
             }}
           >
             <div
               className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
               style={{
-                background: "rgba(99,102,241,0.3)",
-                border: "1px solid rgba(139,92,246,0.5)",
+                background: "rgba(99,102,241,0.15)",
+                border: "1px solid rgba(99,102,241,0.3)",
               }}
             >
-              <svg className="w-5 h-5 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5" style={{ color: "#4338ca" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
             <div>
-              <p className="text-white font-bold text-sm">Secure. Monitored. Logged.</p>
-              <p className="text-blue-200 text-xs mt-0.5">All activities are recorded and monitored.</p>
+              <p className="font-bold text-sm" style={{ color: "#1e3a8a" }}>Secure. Monitored. Logged.</p>
+              <p className="text-xs mt-0.5" style={{ color: "#3b82f6" }}>All activities are recorded and monitored.</p>
             </div>
           </div>
 
-          <p className="text-blue-300/40 text-xs">© 2024 SPACE. All rights reserved.</p>
+          <p className="text-xs" style={{ color: "#93c5fd" }}>© 2024 SPACE. All rights reserved.</p>
         </motion.div>
       </motion.div>
 
@@ -256,7 +264,7 @@ export default function EmployeeLoginPage() {
             >
               <div
                 className="w-16 h-16 rounded-full flex items-center justify-center"
-                style={{ background: "#eef0fd", border: "none" }}
+                style={{ background: "#eef0fd" }}
               >
                 <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="1.5">
                   <path strokeLinecap="round" strokeLinejoin="round"

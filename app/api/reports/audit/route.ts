@@ -31,6 +31,13 @@ export async function GET(req: NextRequest) {
       where: {
         organizationId: user.organizationId,
       },
+      include: {
+        lead: {
+          select: {
+            contactName: true,
+          }
+        }
+      },
       orderBy: {
         createdAt: "desc",
       },
@@ -39,7 +46,9 @@ export async function GET(req: NextRequest) {
 
     const decryptedLogs = auditLogs.map(log => ({
       ...log,
-      note: log.note ? decrypt(log.note) : log.note
+      note: log.note ? decrypt(log.note) : log.note,
+      beforeValue: typeof log.beforeValue === "string" ? decrypt(log.beforeValue) : log.beforeValue,
+      afterValue: typeof log.afterValue === "string" ? decrypt(log.afterValue) : log.afterValue,
     }));
 
     return NextResponse.json(decryptedLogs);

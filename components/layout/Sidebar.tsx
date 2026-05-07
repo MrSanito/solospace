@@ -2,6 +2,7 @@
 import { motion } from "framer-motion";
 import {
   ChevronRight,
+  LogOut,
 } from "lucide-react";
 import SidebarItem from "./SidebarItem";
 import { navItems } from "./navItems";
@@ -26,7 +27,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   return (
     <motion.aside
       initial={{ x: -280 }}
@@ -99,6 +100,17 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
           </button>
         </motion.div>
       )}
+
+      {/* Logout */}
+      <div className="px-4 py-4 border-t border-white/10 mt-auto">
+        <button 
+          onClick={logout} 
+          className="flex items-center gap-3 w-full p-2.5 rounded-lg text-blue-200/60 hover:bg-white/5 hover:text-white transition-all text-sm font-medium group"
+        >
+          <LogOut size={18} className="group-hover:text-blue-400 transition-colors" />
+          Sign Out
+        </button>
+      </div>
     </motion.aside>
   );
 }

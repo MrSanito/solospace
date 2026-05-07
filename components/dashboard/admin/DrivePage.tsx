@@ -336,7 +336,22 @@ export default function DrivePage() {
                            </span>
                          ) : (
                            <button 
-                             onClick={() => setShowKeyForRow(file.id)}
+                             onClick={async () => {
+                               setShowKeyForRow(file.id);
+                               try {
+                                 await fetch("/api/audit/log", {
+                                   method: "POST",
+                                   headers: { "Content-Type": "application/json" },
+                                   body: JSON.stringify({
+                                     action: "VIEW_KEY",
+                                     note: `Admin viewed access key for file: ${file.name}`,
+                                     source: "UI"
+                                   })
+                                 });
+                               } catch (e) {
+                                 console.error("Failed to log key view");
+                               }
+                             }}
                              className="btn btn-xs btn-ghost text-blue-600 gap-1 normal-case font-bold"
                            >
                              <Key size={12} />

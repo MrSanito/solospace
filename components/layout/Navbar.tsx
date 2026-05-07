@@ -1,7 +1,8 @@
 "use client"
 import React from "react";
 import { motion } from "framer-motion";
-import { Search, Bell, ChevronDown } from "lucide-react";
+import { Search, Bell, ChevronDown, User as UserIcon } from "lucide-react";
+import { useAuth } from "@/components/auth/AuthContext";
 
 interface NavbarProps {
   onMenuClick?: () => void;
@@ -9,6 +10,9 @@ interface NavbarProps {
 }
 
 export default function Navbar({ onMenuClick, activeNav }: NavbarProps) {
+  const { user } = useAuth();
+  const initials = user?.name ? user.name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase() : "U";
+
   return (
     <motion.header
       initial={{ y: -60, opacity: 0 }}
@@ -52,13 +56,13 @@ export default function Navbar({ onMenuClick, activeNav }: NavbarProps) {
           className="flex items-center gap-2.5 hover:bg-gray-50 rounded-lg px-2 py-1.5 transition-colors"
         >
           <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
-            OM
+            {user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full rounded-full object-cover" /> : initials}
           </div>
           <div className="text-left hidden sm:block">
             <p className="text-sm font-semibold text-gray-800 leading-tight">
-              Owner
+              {user?.name || "User"}
             </p>
-            <p className="text-xs text-gray-500 leading-tight">Space Motors</p>
+            <p className="text-xs text-gray-500 leading-tight">{user?.organization?.name || "Space Motors"}</p>
           </div>
           <ChevronDown size={14} className="text-gray-400" />
         </motion.button>

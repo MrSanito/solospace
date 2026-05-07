@@ -1,4 +1,5 @@
 "use client"
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Users,
@@ -38,11 +39,26 @@ export default function DashboardView({
   refreshKey,
   sidebarFilter,
 }: DashboardViewProps) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/dashboard/stats")
+      .then(res => res.json())
+      .then(json => {
+        setData(json);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [refreshKey]);
+
+  const kpis = data?.kpis || {};
+  
   const stats = [
-    { label: "Active Employees", val: "128", trend: "+12", icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Storage Used", val: "1.2 TB", trend: "+4%", icon: Shield, color: "text-indigo-600", bg: "bg-indigo-50" },
-    { label: "Active Chats", val: "45", trend: "+15%", icon: MessageSquare, color: "text-purple-600", bg: "bg-purple-50" },
-    { label: "Active Alerts", val: "12", trend: "-2", icon: AlertCircle, color: "text-red-600", bg: "bg-red-50" },
+    { label: "Total Leads", val: kpis.totalLeads || "0", trend: `+${kpis.newLeadsThisWeek || 0}`, icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "Follow-ups Due", val: kpis.followUpsDueToday || "0", trend: `Total: ${kpis.followUpsTotal || 0}`, icon: Clock, color: "text-indigo-600", bg: "bg-indigo-50" },
+    { label: "Active Deals", val: kpis.wonDeals || "0", trend: `₹${(kpis.totalPipelineValue / 1000).toFixed(1)}k`, icon: MessageSquare, color: "text-purple-600", bg: "bg-purple-50" },
+    { label: "High Priority", val: kpis.alertsCount || "0", trend: "Alerts", icon: AlertCircle, color: "text-red-600", bg: "bg-red-50" },
   ];
 
   return (
@@ -96,7 +112,7 @@ export default function DashboardView({
                   <motion.div
                     initial={{ height: 0 }}
                     animate={{ height: `${h}%` }}
-                    transition={{ duration: 1, delay: i * 0.05, ease: "easeOut" }}
+                    transition={{ duration: 1, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
                     className="w-full bg-blue-600 rounded-t-lg group-hover:bg-blue-700 transition-colors relative"
                   >
                     <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">

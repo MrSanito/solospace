@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { createAuditLog } from "@/lib/audit";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 
@@ -154,6 +155,22 @@ export async function POST(req: Request) {
         accessKey: Math.random().toString(36).substring(2, 8).toUpperCase(), // Generate 6-char key
         isRestricted: true
       }
+    });
+    
+    // Fetch user for audit log
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true }
+    });
+    
+    await createAuditLog({
+      organizationId,
+      actorType: "USER",
+      actorId: userId,
+      actorName: user?.name || "Unknown",
+      action: "UPLOAD",
+      note: `Uploaded file: ${newFile.name}`,
+      source: "UI"
     });
 
     return NextResponse.json(newFile);

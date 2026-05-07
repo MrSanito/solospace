@@ -31,17 +31,23 @@ export async function GET() {
         lead: {
           include: {
             owner: {
-                select: {
-                    id: true,
-                    name: true,
-                    avatarUrl: true,
-                    jobTitle: true,
-                    department: true
-                }
+              select: {
+                id: true,
+                name: true,
+                avatarUrl: true,
+                role: true,
+                jobTitle: true,
+                department: true
+              }
+            },
+            notes: {
+              include: {
+                attachments: true
+              }
             },
             auditLogs: {
-                orderBy: { createdAt: "desc" },
-                take: 5
+              orderBy: { createdAt: "desc" },
+              take: 5
             }
           }
         },
@@ -53,22 +59,62 @@ export async function GET() {
     });
 
     if (!thread) {
-        // If no thread exists yet, return lead info at least
-        const leadInfo = await prisma.lead.findUnique({
-            where: { id: lead.leadId },
-            include: { owner: true }
-        });
-        return NextResponse.json({ lead: leadInfo, messages: [] });
+      const leadInfo = await prisma.lead.findUnique({
+        where: { id: lead.leadId },
+        include: { owner: true }
+      });
+      return NextResponse.json({ lead: leadInfo, messages: [], sharedFiles: [] });
     }
 
-    if (thread) {
-        thread.messages = thread.messages.map(m => ({
-            ...m,
-            content: decrypt(m.content)
-        }));
-    }
+    // Collect message attachments
+    const messageAttachments = thread.messages.flatMap(m => m.attachments.map(att => ({
+      ...att,
+      source: "CHAT"
+    })));
 
-    return NextResponse.json(thread);
+    // Collect note attachments
+    const noteAttachments = (thread.lead.notes || []).flatMap(n => n.attachments.map(att => ({
+      ...att,
+      fileType: att.mimeType,
+      fileSize: att.fileSizeBytes,
+      createdAt: att.uploadedAt, // Normalize date field
+      source: "NOTE"
+    })));
+
+    // Combine and sort by date
+    const allFiles = [...messageAttachments, ...noteAttachments].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    // Extract participant IDs (USER type)
+    const participantIds = Array.from(new Set(thread.messages
+      .filter(m => m.senderType === "USER" && m.senderId)
+      .map(m => m.senderId as string)
+    ));
+
+    const participants = await prisma.user.findMany({
+      where: { id: { in: participantIds } },
+      select: {
+        id: true,
+        name: true,
+        avatarUrl: true,
+        role: true,
+        jobTitle: true,
+        department: true
+      }
+    });
+
+    const decryptedThread = {
+      ...thread,
+      participants,
+      sharedFiles: allFiles,
+      messages: thread.messages.map(m => ({
+        ...m,
+        content: decrypt(m.content)
+      }))
+    };
+
+    return NextResponse.json(decryptedThread);
   } catch (error: any) {
     console.error("[LeadChat GET] Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

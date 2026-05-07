@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { createAuditLog } from "@/lib/audit";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 
@@ -41,6 +42,24 @@ export async function POST(req: Request) {
     }
 
     if (file.accessKey === accessKey.toUpperCase()) {
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.userId },
+        select: { organizationId: true, name: true }
+      });
+
+      if (user) {
+        await createAuditLog({
+          organizationId: user.organizationId,
+          actorType: "USER",
+          actorId: decoded.userId,
+          actorName: user.name,
+          action: "DECRYPT",
+          note: `Unlocked file: ${file.name || file.fileName}`,
+          source: "UI"
+        });
+      }
+
       return NextResponse.json({ url: file.fileUrl });
     } else {
       return NextResponse.json({ error: "Invalid access key" }, { status: 403 });

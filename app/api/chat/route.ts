@@ -106,13 +106,29 @@ export async function POST(req: Request) {
       include: { attachments: true }
     });
 
+    // Fetch Actor Name for Audit Log
+    let actorName = senderType === "LEAD" ? "Lead" : "User";
+    if (senderType === "USER" && senderId) {
+      const user = await prisma.user.findUnique({
+        where: { id: senderId },
+        select: { name: true }
+      });
+      if (user) actorName = user.name;
+    } else if (senderType === "LEAD") {
+      const lead = await prisma.lead.findUnique({
+        where: { id: leadId },
+        select: { contactName: true }
+      });
+      if (lead) actorName = lead.contactName;
+    }
+
     // Create Audit Log for Chat
     await createAuditLog({
       organizationId: thread.organizationId,
       leadId,
-      actorType: senderType === "USER" ? "USER" : "AI", // Default to AI for Lead sender in audit logs if needed
-      actorId: senderId,
-      actorName: senderType === "USER" ? "User" : "Lead",
+      actorType: senderType === "USER" ? "USER" : "AI", 
+      actorId: senderId || leadId,
+      actorName: actorName,
       action: "CHAT",
       note: encrypt(`Chat message: ${content}`),
       source: "UI",

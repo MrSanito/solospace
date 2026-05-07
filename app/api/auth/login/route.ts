@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
+import { createAuditLog } from "@/lib/audit";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-me";
 
@@ -65,6 +66,17 @@ export async function POST(req: Request) {
       JWT_SECRET,
       { expiresIn: "1d" }
     );
+
+    // Create audit log for login
+    await createAuditLog({
+      organizationId: user.organizationId,
+      actorType: "USER",
+      actorId: user.id,
+      actorName: user.name,
+      action: "LOGIN",
+      note: `Logged in via ${body.loginType || "Standard"} Login`,
+      source: "UI"
+    });
 
     const response = NextResponse.json(
       { 

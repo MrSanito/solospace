@@ -9,6 +9,10 @@ interface User {
   role: string;
   initials: string;
   organizationId: string;
+  avatarUrl?: string;
+  organization?: {
+    name: string;
+  };
 }
 
 interface AuthContextType {

@@ -26,9 +26,10 @@ export async function POST(req: Request) {
       }, { status: 500 });
     }
 
-    // Find the lead portal account
+    // Find the lead portal account (case-insensitive)
+    const normalizedEmail = email.toLowerCase().trim();
     const account = await prisma.leadPortalAccount.findUnique({
-      where: { username: email },
+      where: { username: normalizedEmail },
       include: { 
         lead: {
           include: {

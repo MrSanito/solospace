@@ -25,13 +25,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
     let user = null;
     let attempts = 0;
     while (attempts < 3) {
       try {
         console.log(`>>> [DEBUG] DB Attempt ${attempts + 1}`);
         user = await prisma.user.findUnique({
-          where: { email },
+          where: { email: normalizedEmail },
         });
         break;
       } catch (err: any) {

@@ -27,12 +27,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    const userAgent = req.headers.get("user-agent") || "Unknown";
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+    
     const body = await req.json();
     const { action, leadId, note, source, field, beforeValue, afterValue } = body;
 
     if (!action) {
       return NextResponse.json({ error: "Action is required" }, { status: 400 });
     }
+
+    const enhancedNote = typeof note === "string" && !note.startsWith("{") 
+      ? JSON.stringify({ message: note, device: userAgent, ip: ip })
+      : note;
 
     await createAuditLog({
       organizationId: user.organizationId,
@@ -44,14 +51,14 @@ export async function POST(req: Request) {
       field: field,
       beforeValue: beforeValue,
       afterValue: afterValue,
-      note: note,
+      note: enhancedNote,
       source: source || "UI",
     });
 
     // EWS Check: File Access Spike
     if (action === "DOWNLOAD" && note) {
       const { checkFileAccessSpike } = await import("@/lib/ews");
-      await checkFileAccessSpike(user.id, user.organizationId, note);
+      await checkFileAccessSpike(user.id, user.organizationId, note, ip, userAgent);
     }
 
     return NextResponse.json({ success: true });

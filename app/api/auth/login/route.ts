@@ -11,6 +11,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const userAgent = req.headers.get("user-agent") || "Unknown";
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+
   console.log(">>> [DEBUG] LOGIN HANDLER STARTING <<<");
   try {
     const body = await req.json();
@@ -58,6 +61,22 @@ export async function POST(req: Request) {
 
     if (!isPasswordValid) {
       console.log(">>> [DEBUG] Password invalid");
+      
+      // Log failed attempt
+      await createAuditLog({
+        organizationId: user.organizationId,
+        actorType: "USER",
+        actorId: user.id,
+        actorName: user.name,
+        action: "FAILED_LOGIN",
+        note: JSON.stringify({
+          message: `Invalid password attempt via ${body.loginType || "Standard"} Login`,
+          device: userAgent,
+          ip: ip
+        }),
+        source: "UI"
+      });
+
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
@@ -74,13 +93,17 @@ export async function POST(req: Request) {
       actorId: user.id,
       actorName: user.name,
       action: "LOGIN",
-      note: `Logged in via ${body.loginType || "Standard"} Login`,
+      note: JSON.stringify({
+        message: `Logged in via ${body.loginType || "Standard"} Login`,
+        device: userAgent,
+        ip: ip
+      }),
       source: "UI"
     });
 
     // EWS Check: Login Spike
     const { checkLoginSpike } = await import("@/lib/ews");
-    await checkLoginSpike(user.id, user.organizationId);
+    await checkLoginSpike(user.id, user.organizationId, ip, userAgent);
 
     const response = NextResponse.json(
       { 

@@ -55,11 +55,15 @@ interface SidebarFilterItem {
   subStatus: string | null;
   dealSizeMin: string | null;
   dealSizeMax: string | null;
+  industry: string | null;
+  alphabet: string | null;
   icon: string;
   color: string;
   orderIndex: number;
   createdBy?: { name: string };
 }
+
+const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 export default function SettingsView() {
   const { user, checkUser } = useAuth();
@@ -70,6 +74,7 @@ export default function SettingsView() {
 
   // Sidebar customization state
   const [sidebarFilters, setSidebarFilters] = useState<SidebarFilterItem[]>([]);
+  const [industries, setIndustries] = useState<string[]>([]);
   const [filtersLoading, setFiltersLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newFilter, setNewFilter] = useState({
@@ -77,6 +82,8 @@ export default function SettingsView() {
     status: "",
     subStatus: "",
     dealSize: "",
+    industry: "",
+    alphabet: "",
     color: "blue",
   });
   const [saving, setSaving] = useState(false);
@@ -88,10 +95,12 @@ export default function SettingsView() {
     }
   }, [user]);
 
-  // Fetch sidebar filters
+  // Fetch sidebar filters and industries
   useEffect(() => {
     if (user?.role === "ORG_ADMIN") {
       setFiltersLoading(true);
+      
+      // Fetch filters
       fetch("/api/sidebar-filters")
         .then((r) => r.json())
         .then((data) => {
@@ -99,6 +108,14 @@ export default function SettingsView() {
         })
         .catch(console.error)
         .finally(() => setFiltersLoading(false));
+
+      // Fetch unique industries
+      fetch("/api/leads/industries")
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data)) setIndustries(data);
+        })
+        .catch(console.error);
     }
   }, [user]);
 
@@ -153,6 +170,8 @@ export default function SettingsView() {
           subStatus: newFilter.subStatus || null,
           dealSizeMin,
           dealSizeMax,
+          industry: newFilter.industry || null,
+          alphabet: newFilter.alphabet || null,
           color: newFilter.color,
         }),
       });
@@ -160,7 +179,7 @@ export default function SettingsView() {
       if (res.ok) {
         const created = await res.json();
         setSidebarFilters((prev) => [...prev, created]);
-        setNewFilter({ name: "", status: "", subStatus: "", dealSize: "", color: "blue" });
+        setNewFilter({ name: "", status: "", subStatus: "", dealSize: "", industry: "", alphabet: "", color: "blue" });
         setShowAddForm(false);
         toast.success(`"${created.name}" added to sidebar`);
       } else {
@@ -390,8 +409,55 @@ export default function SettingsView() {
                         </select>
                       </div>
 
-                      {/* Color Picker */}
+                      {/* Industry Selection */}
                       <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Industry</label>
+                        <select
+                          value={newFilter.industry}
+                          onChange={(e) => setNewFilter({ ...newFilter, industry: e.target.value })}
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 transition-all appearance-none cursor-pointer"
+                        >
+                          <option value="">Any Industry</option>
+                          {industries.map((ind) => (
+                            <option key={ind} value={ind}>{ind}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Alphabetic Selection */}
+                      <div className="sm:col-span-2 space-y-1.5">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Alphabetic Filter (Starts With)</label>
+                        <div className="flex flex-wrap gap-1 bg-white p-2 rounded-xl border border-slate-200">
+                          <button
+                            type="button"
+                            onClick={() => setNewFilter({ ...newFilter, alphabet: "" })}
+                            className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${
+                              newFilter.alphabet === ""
+                                ? "bg-slate-900 text-white"
+                                : "text-slate-400 hover:bg-slate-50"
+                            }`}
+                          >
+                            ANY
+                          </button>
+                          {ALPHABET.map((letter) => (
+                            <button
+                              key={letter}
+                              type="button"
+                              onClick={() => setNewFilter({ ...newFilter, alphabet: letter })}
+                              className={`w-8 h-8 flex items-center justify-center text-xs font-bold rounded-lg transition-all ${
+                                newFilter.alphabet === letter
+                                  ? "bg-purple-600 text-white shadow-lg shadow-purple-200"
+                                  : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                              }`}
+                            >
+                              {letter}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Color Picker */}
+                      <div className="sm:col-span-2 space-y-1.5">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Accent Color</label>
                         <div className="flex items-center gap-2 py-2">
                           {COLOR_OPTIONS.map((c) => (
@@ -464,7 +530,17 @@ export default function SettingsView() {
                                   {getDealSizeLabel(f.dealSizeMin, f.dealSizeMax)}
                                 </span>
                               )}
-                              {!f.status && !f.subStatus && !f.dealSizeMin && !f.dealSizeMax && (
+                              {f.industry && (
+                                <span className="text-[9px] font-bold bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                  {f.industry}
+                                </span>
+                              )}
+                              {f.alphabet && (
+                                <span className="text-[9px] font-bold bg-pink-50 text-pink-600 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                  Starts with "{f.alphabet}"
+                                </span>
+                              )}
+                              {!f.status && !f.subStatus && !f.dealSizeMin && !f.dealSizeMax && !f.industry && !f.alphabet && (
                                 <span className="text-[9px] font-bold bg-slate-50 text-slate-400 px-2 py-0.5 rounded-full uppercase tracking-wider">
                                   All Leads
                                 </span>

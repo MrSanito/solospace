@@ -436,6 +436,8 @@ model SidebarFilter {
   subStatus      LeadSubStatus?
   dealSizeMin    Decimal?      @db.Decimal(15, 2)
   dealSizeMax    Decimal?      @db.Decimal(15, 2)
+  industry       String?
+  alphabet       String?
   icon           String        @default("filter")
   color          String        @default("blue")
   orderIndex     Int           @default(0)

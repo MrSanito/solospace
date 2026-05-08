@@ -8,6 +8,9 @@ import SidebarItem from "./SidebarItem";
 import { navItems } from "./navItems";
 import { useAuth } from "@/components/auth/AuthContext";
 import Image from "next/image";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { Target } from "lucide-react";
 
 export type PageId =
   | "overview"
@@ -29,6 +32,18 @@ interface SidebarProps {
 
 export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
   const { user, logout } = useAuth();
+  const searchParams = useSearchParams();
+  const [customProtocols, setCustomProtocols] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch("/api/sidebar-filters")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setCustomProtocols(data);
+      })
+      .catch(console.error);
+  }, []);
+
   return (
     <motion.aside
       initial={{ x: -280 }}
@@ -77,10 +92,33 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
               key={item.id}
               {...item}
               index={i}
-              isActive={currentPage === item.id}
+              isActive={currentPage === item.id && !searchParams.get("sf")}
               onClick={onNavigate}
             />
           ))}
+
+        {/* Protocols Section */}
+        {customProtocols.length > 0 && (
+          <div className="mt-6">
+            <div className="px-5 mb-2 flex items-center justify-between">
+              <span className="text-[10px] font-black text-blue-200/30 uppercase tracking-[0.2em]">Protocols</span>
+              <div className="h-[1px] flex-1 bg-white/5 ml-3" />
+            </div>
+            <div className="space-y-0.5">
+              {customProtocols.map((p, i) => (
+                <SidebarItem
+                  key={p.id}
+                  id={p.id as any}
+                  label={p.name}
+                  icon={Target}
+                  index={i + navItems.length}
+                  isActive={searchParams.get("sf") === p.id}
+                  onClick={(id) => onNavigate(`protocol-${id}` as any)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Storage Usage - Hidden for Sales Rep */}

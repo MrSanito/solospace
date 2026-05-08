@@ -38,7 +38,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return "overview";
   };
 
-  const handleNavigate = (page: PageId) => {
+  const handleNavigate = (page: PageId | string) => {
+    if (page.startsWith("protocol-")) {
+      const id = page.replace("protocol-", "");
+      router.push(`/dashboard?sf=${id}`);
+      return;
+    }
+
     if (page === "overview") router.push("/dashboard");
     else router.push(`/dashboard/${page}`);
   };

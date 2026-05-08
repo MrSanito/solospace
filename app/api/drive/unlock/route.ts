@@ -15,6 +15,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const userAgent = req.headers.get("user-agent") || "Unknown";
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
     const { fileId, accessKey } = await req.json();
 
     if (!fileId || !accessKey) {
@@ -49,19 +51,25 @@ export async function POST(req: Request) {
       });
 
       if (user) {
+        const note = JSON.stringify({
+          message: `Unlocked file: ${file.name || file.fileName}`,
+          device: userAgent,
+          ip: ip
+        });
+
         await createAuditLog({
           organizationId: user.organizationId,
           actorType: "USER",
           actorId: decoded.userId,
           actorName: user.name,
           action: "DECRYPT",
-          note: `Unlocked file: ${file.name || file.fileName}`,
+          note,
           source: "UI"
         });
 
         // EWS Check: File Access Spike
         const { checkFileAccessSpike } = await import("@/lib/ews");
-        await checkFileAccessSpike(decoded.userId, user.organizationId, `Unlocked file: ${file.name || file.fileName}`);
+        await checkFileAccessSpike(decoded.userId, user.organizationId, note, ip, userAgent);
       }
 
       return NextResponse.json({ url: file.fileUrl });

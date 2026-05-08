@@ -6,7 +6,10 @@ import { createAuditLog } from "@/lib/audit";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-me";
 
-export async function POST() {
+export async function POST(req: Request) {
+  const userAgent = req.headers.get("user-agent") || "Unknown";
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -26,13 +29,17 @@ export async function POST() {
               actorId: user.id,
               actorName: user.name,
               action: "LOGOUT",
-              note: "User logged out successfully",
+              note: JSON.stringify({
+                message: "User logged out successfully",
+                device: userAgent,
+                ip: ip
+              }),
               source: "UI"
             });
 
             // EWS Check: Login/Logout Spike
             const { checkLoginSpike } = await import("@/lib/ews");
-            await checkLoginSpike(user.id, user.organizationId);
+            await checkLoginSpike(user.id, user.organizationId, ip, userAgent);
           }
       } catch (jwtError) {
         console.error("JWT verification failed during logout:", jwtError);

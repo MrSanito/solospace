@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Download,
@@ -12,42 +12,118 @@ import {
   CheckCircle2,
   Minus,
   Shield,
+  AlertTriangle,
+  History,
+  Monitor,
+  MapPin,
 } from "lucide-react";
-
-const sessions = [
-  { initials: "RM", color: "bg-blue-600", name: "Rahul Mehta", role: "Owner", sessionId: "sess_7f3a2b8d8c4e", device: "Chrome on Windows", os: "Windows 11", ip: "106.201.45.12", location: "Mumbai, India", loginTime: "19 Apr 2024, 11:28 AM", lastActive: "1 min ago", status: "Active", mfa: true },
-  { initials: "AS", color: "bg-indigo-600", name: "Amit Sharma", role: "Employee", sessionId: "sess_3ab81d9e2f7c", device: "Chrome on macOS", os: "macOS 14", ip: "182.68.11.23", location: "New Delhi, India", loginTime: "19 Apr 2024, 11:22 AM", lastActive: "2 min ago", status: "Active", mfa: true },
-  { initials: "PP", color: "bg-pink-600", name: "Pooja Patel", role: "Employee", sessionId: "sess_8c2f1d3a6b91", device: "Edge on Windows", os: "Windows 11", ip: "117.207.14.66", location: "Ahmedabad, India", loginTime: "19 Apr 2024, 10:58 AM", lastActive: "15 min ago", status: "Active", mfa: true },
-  { initials: "KT", color: "bg-teal-600", name: "Karan Trivedi", role: "Employee", sessionId: "sess_9d7e2c5b0a11", device: "Chrome on Android", os: "Android 14", ip: "152.58.23.90", location: "Bengaluru, India", loginTime: "19 Apr 2024, 10:45 AM", lastActive: "27 min ago", status: "Active", mfa: true },
-  { initials: "NS", color: "bg-orange-500", name: "Neha Singh", role: "Employee", sessionId: "sess_1d9a8e2f7c30", device: "Safari on iPhone", os: "iOS 17.4", ip: "103.21.45.78", location: "Pune, India", loginTime: "19 Apr 2024, 10:15 AM", lastActive: "45 min ago", status: "Active", mfa: true },
-  { initials: "SM", color: "bg-violet-600", name: "Sandeep Mishra", role: "Employee", sessionId: "sess_6b2d4f1e9a55", device: "Firefox on Windows", os: "Windows 10", ip: "103.45.67.89", location: "Jaipur, India", loginTime: "19 Apr 2024, 09:32 AM", lastActive: "1 hr ago", status: "Idle", mfa: true },
-  { initials: "JP", color: "bg-cyan-600", name: "Jignesh Parmar", role: "Employee", sessionId: "sess_4f1a7c3d6b22", device: "Chrome on Windows", os: "Windows 11", ip: "49.205.12.33", location: "Surat, India", loginTime: "19 Apr 2024, 09:10 AM", lastActive: "2 hrs ago", status: "Logged Out", mfa: false },
-  { initials: "MM", color: "bg-amber-600", name: "Mehul Modi", role: "Employee", sessionId: "sess_2c6a9e1b4d88", device: "Chrome on Android", os: "Android 13", ip: "2405:201:c0d8:1234:1", location: "Vadodara, India", loginTime: "19 Apr 2024, 08:42 AM", lastActive: "3 hrs ago", status: "Logged Out", mfa: false },
-  { initials: "RS", color: "bg-rose-500", name: "Riya Shah", role: "Employee", sessionId: "sess_5e6b2a9c8d77", device: "Safari on macOS", os: "macOS 14", ip: "106.193.28.11", location: "Chennai, India", loginTime: "19 Apr 2024, 08:21 AM", lastActive: "4 hrs ago", status: "Logged Out", mfa: false },
-  { initials: "NK", color: "bg-slate-600", name: "Nilesh Kothari", role: "Employee", sessionId: "sess_0a7d6e3b9f44", device: "Chrome on Windows", os: "Windows 10", ip: "183.82.19.20", location: "Kolkata, India", loginTime: "19 Apr 2024, 07:55 AM", lastActive: "5 hrs ago", status: "Logged Out", mfa: false },
-];
-
-const stats = [
-  { label: "Active Sessions", value: "18", change: "+3 vs yesterday", positive: true },
-  { label: "Unique Logins (24h)", value: "64", change: "+12% vs yesterday", positive: true },
-  { label: "Failed Login Attempts (24h)", value: "7", change: "-13% vs yesterday", positive: true },
-  { label: "Suspicious Events (24h)", value: "3", change: "View details →", positive: false },
-  { label: "MFA Adoption", value: "92%", change: "+6% vs last 7 days", positive: true },
-];
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.06 } },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.05 }
+  }
 };
+
 const itemVariants = {
-  hidden: { opacity: 0, y: 14 },
-  visible: { opacity: 1, y: 0 },
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0 }
 };
 
 export default function SessionSecurityPage() {
-  const [selected, setSelected] = useState(sessions[0]);
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("Active Sessions");
+  const [searchQuery, setSearchQuery] = useState("");
+
   const tabs = ["Active Sessions", "Login History", "Security Events", "Devices", "Location History"];
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/dashboard/sessions");
+      const json = await res.json();
+      setData(json);
+    } catch (error) {
+      console.error("Failed to fetch sessions:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const getMetadata = (note: string | null) => {
+    if (!note) return { device: "Unknown", os: "Unknown", browser: "Unknown", ip: "Unknown", fullDevice: "Unknown" };
+    try {
+      const parsed = JSON.parse(note);
+      const ua = parsed.device || "";
+      
+      let os = "Unknown";
+      let device = "Desktop";
+      let browser = "Unknown";
+
+      if (ua.includes("Windows")) os = "Windows";
+      else if (ua.includes("Macintosh")) os = "macOS";
+      else if (ua.includes("Android")) { os = "Android"; device = "Mobile"; }
+      else if (ua.includes("iPhone")) { os = "iOS"; device = "iPhone"; }
+
+      if (ua.includes("Chrome")) browser = "Chrome";
+      else if (ua.includes("Firefox")) browser = "Firefox";
+      else if (ua.includes("Safari")) browser = "Safari";
+      else if (ua.includes("Edge")) browser = "Edge";
+
+      return {
+        device,
+        os,
+        browser,
+        ip: parsed.ip || "Unknown",
+        fullDevice: browser !== "Unknown" ? `${browser} on ${os}` : os,
+        message: parsed.message
+      };
+    } catch {
+      return { device: "Unknown", os: "Unknown", browser: "Unknown", ip: "Unknown", fullDevice: "Unknown" };
+    }
+  };
+
+  const getDisplayData = () => {
+    if (!data) return [];
+    let items = [];
+    
+    if (activeTab === "Active Sessions") {
+      items = data.sessions || [];
+    } else if (activeTab === "Login History") {
+      items = data.loginHistory || [];
+    } else if (activeTab === "Security Events") {
+      items = data.securityEvents || [];
+    } else {
+      items = data.sessions || [];
+    }
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      items = items.filter((item: any) => 
+        item.user?.name?.toLowerCase().includes(q) || 
+        item.id?.toLowerCase().includes(q) ||
+        item.title?.toLowerCase().includes(q) ||
+        item.actorName?.toLowerCase().includes(q)
+      );
+    }
+
+    return items;
+  };
+
+  const stats = [
+    { label: "Active Sessions", value: data?.stats?.activeSessions || "0", change: "Current live", positive: true },
+    { label: "Unique Logins (24h)", value: data?.stats?.uniqueLogins || "0", change: "Last 24 hours", positive: true },
+    { label: "Failed Attempts (24h)", value: data?.stats?.failedAttempts || "0", change: "Last 24 hours", positive: data?.stats?.failedAttempts === 0 },
+    { label: "Suspicious Events", value: data?.stats?.suspiciousEvents || "0", change: "EWS Alerts", positive: data?.stats?.suspiciousEvents === 0 },
+    { label: "MFA Adoption", value: data?.stats?.mfaAdoption || "100%", change: "Policy coverage", positive: true },
+  ];
 
   return (
     <div className="flex h-full">
@@ -132,8 +208,8 @@ export default function SessionSecurityPage() {
           <button className="btn btn-sm btn-ghost gap-1.5 border border-gray-200 bg-white">
             <Filter size={14} /> Filters
           </button>
-          <button className="btn btn-sm btn-ghost btn-square border border-gray-200 bg-white">
-            <RefreshCw size={14} />
+          <button onClick={fetchData} className="btn btn-sm btn-ghost btn-square border border-gray-200 bg-white" disabled={loading}>
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           </button>
         </div>
 
@@ -141,11 +217,15 @@ export default function SessionSecurityPage() {
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
-              placeholder="Search sessions..."
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white"
             />
           </div>
-          <span className="text-sm text-gray-500">Showing 1 to 10 of 18 sessions</span>
+          <span className="text-sm text-gray-500">
+            Showing {getDisplayData().length} results
+          </span>
         </div>
 
         {/* Table */}
@@ -153,83 +233,78 @@ export default function SessionSecurityPage() {
           <table className="table table-sm w-full">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                {["User", "Session ID", "Device / Browser", "IP Address", "Location", "Login Time", "Last Active", "Status", "MFA", "Actions"].map((h) => (
+                {["User", "ID", "Device / Browser", "IP Address", "Event Time", "Status / Severity", "MFA", "Actions"].map((h) => (
                   <th key={h} className="text-xs font-semibold text-gray-500 py-3 text-left px-4">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {sessions.map((s, i) => (
-                <motion.tr
-                  key={s.sessionId}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.04 }}
-                  onClick={() => setSelected(s)}
-                  className={`border-b border-gray-100 cursor-pointer transition-colors hover:bg-blue-50/30 ${
-                    selected?.sessionId === s.sessionId ? "bg-blue-50/60" : ""
-                  }`}
-                >
-                  <td className="py-2.5 px-4">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-7 h-7 rounded-full ${s.color} text-white text-xs font-bold flex items-center justify-center`}>
-                        {s.initials}
+              {getDisplayData().map((s: any, i: number) => {
+                const meta = getMetadata(s.note);
+                const isSecurity = activeTab === "Security Events";
+                const user = s.user || { name: s.actorName || "System", role: "N/A", initials: "S" };
+                const initials = user.initials || user.name?.substring(0, 1) || "U";
+
+                return (
+                  <motion.tr
+                    key={s.id}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.01 }}
+                    onClick={() => setSelected(s)}
+                    className={`border-b border-gray-100 cursor-pointer transition-colors hover:bg-blue-50/30 ${
+                      selected?.id === s.id ? "bg-blue-50/60" : ""
+                    }`}
+                  >
+                    <td className="py-2.5 px-4">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-7 h-7 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center`}>
+                          {initials}
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-gray-800">{user.name}</p>
+                          <p className="text-xs text-gray-400">{user.role}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs font-semibold text-gray-800">{s.name}</p>
-                        <p className="text-xs text-gray-400">{s.role}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="text-xs font-mono text-gray-600 px-4">{s.sessionId}</td>
-                  <td className="px-4">
-                    <p className="text-xs text-gray-700">{s.device}</p>
-                    <p className="text-xs text-gray-400">{s.os}</p>
-                  </td>
-                  <td className="text-xs font-mono text-gray-600 px-4">{s.ip}</td>
-                  <td className="text-xs text-gray-700 px-4">🇮🇳 {s.location}</td>
-                  <td className="px-4">
-                    <p className="text-xs text-gray-700">{s.loginTime}</p>
-                  </td>
-                  <td className="text-xs text-gray-500 px-4">{s.lastActive}</td>
-                  <td className="px-4">
-                    <span className={`badge badge-sm font-medium ${
-                      s.status === "Active" ? "badge-success text-green-700 bg-green-50 border-green-200" :
-                      s.status === "Idle" ? "badge-warning text-yellow-700 bg-yellow-50 border-yellow-200" :
-                      "badge-ghost text-gray-500 bg-gray-50"
-                    }`}>
-                      {s.status}
-                    </span>
-                  </td>
-                  <td className="px-4">
-                    {s.mfa ? (
+                    </td>
+                    <td className="text-xs font-mono text-gray-600 px-4">{s.id.substring(0, 8)}</td>
+                    <td className="px-4">
+                      <p className="text-xs text-gray-700">{isSecurity ? s.title : meta.fullDevice}</p>
+                      <p className="text-xs text-gray-400">{isSecurity ? s.severity : meta.os}</p>
+                    </td>
+                    <td className="text-xs font-mono text-gray-600 px-4">{isSecurity ? s.ipAddress || "N/A" : meta.ip}</td>
+                    <td className="px-4">
+                      <p className="text-xs text-gray-700">{new Date(s.createdAt).toLocaleString()}</p>
+                    </td>
+                    <td className="px-4">
+                      <span className={`badge badge-sm font-medium ${
+                        isSecurity ? (s.severity === "High" ? "badge-error text-red-700 bg-red-50 border-red-200" : "badge-warning text-yellow-700 bg-yellow-50 border-yellow-200") :
+                        s.action === "LOGIN" ? "badge-success text-green-700 bg-green-50 border-green-200" :
+                        s.action === "LOGOUT" ? "badge-ghost text-gray-500 bg-gray-50" :
+                        "badge-error text-red-700 bg-red-50 border-red-200"
+                      }`}>
+                        {isSecurity ? s.status : (s.action === "FAILED_LOGIN" ? "FAILED" : s.action)}
+                      </span>
+                    </td>
+                    <td className="px-4">
                       <CheckCircle2 size={16} className="text-green-500" />
-                    ) : (
-                      <Minus size={16} className="text-gray-300" />
-                    )}
-                  </td>
-                  <td className="px-4" onClick={(e) => e.stopPropagation()}>
-                    <button className="p-1 hover:bg-gray-100 rounded">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400">
-                        <circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>
-                      </svg>
-                    </button>
-                  </td>
-                </motion.tr>
-              ))}
+                    </td>
+                    <td className="px-4" onClick={(e) => e.stopPropagation()}>
+                      <button className="p-1 hover:bg-gray-100 rounded">
+                        <X size={14} className="text-gray-400" />
+                      </button>
+                    </td>
+                  </motion.tr>
+                );
+              })}
             </tbody>
           </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
-          <span>Showing 1 to 10 of 18 sessions</span>
-          <div className="flex items-center gap-2">
-            <button className="btn btn-xs btn-ghost"><ChevronLeft size={14} /></button>
-            <button className="btn btn-xs btn-primary">1</button>
-            <button className="btn btn-xs btn-ghost">2</button>
-            <button className="btn btn-xs btn-ghost"><ChevronRight size={14} /></button>
-          </div>
+          {getDisplayData().length === 0 && (
+            <div className="p-12 text-center">
+              <History size={40} className="mx-auto text-gray-200 mb-3" />
+              <p className="text-gray-500">No events found for this criteria.</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -242,103 +317,91 @@ export default function SessionSecurityPage() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 320, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 28 }}
-            className="w-72 flex-shrink-0 bg-white border-l border-gray-200 overflow-y-auto"
+            className="w-80 flex-shrink-0 bg-white border-l border-gray-200 overflow-y-auto"
           >
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-800">Session Details</h3>
-                <button onClick={() => setSelected(null as any)} className="btn btn-ghost btn-xs btn-square">
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-semibold text-gray-800">Event Details</h3>
+                <button onClick={() => setSelected(null)} className="btn btn-ghost btn-xs btn-square">
                   <X size={14} />
                 </button>
               </div>
 
               {/* User */}
-              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100">
-                <div className={`w-10 h-10 rounded-full ${selected.color} text-white font-bold text-sm flex items-center justify-center`}>
-                  {selected.initials}
+              <div className="flex items-center gap-3 mb-6 pb-6 border-b border-gray-100">
+                <div className={`w-12 h-12 rounded-full bg-indigo-600 text-white font-bold text-lg flex items-center justify-center`}>
+                  {(selected.user?.initials || selected.user?.name?.substring(0, 1) || selected.actorName?.substring(0, 1) || "U")}
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-800">{selected.name}</p>
-                  <p className="text-xs text-gray-500">{selected.role}</p>
+                  <p className="font-semibold text-gray-800 text-base">{selected.user?.name || selected.actorName || "System"}</p>
+                  <p className="text-sm text-gray-500">{selected.user?.role || "System Process"}</p>
                 </div>
-                <span className="ml-auto badge badge-success badge-sm text-green-700 bg-green-50 border-green-200">
-                  Active
-                </span>
               </div>
 
               {/* Details */}
-              <div className="space-y-2 mb-4 pb-4 border-b border-gray-100">
+              <div className="space-y-3 mb-6 pb-6 border-b border-gray-100">
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Properties</h4>
                 {[
-                  { label: "Session ID", value: selected.sessionId },
-                  { label: "Device / Browser", value: selected.device },
-                  { label: "OS", value: selected.os },
-                  { label: "IP Address", value: selected.ip },
-                  { label: "Location", value: `🇮🇳 ${selected.location}` },
-                  { label: "Login Time", value: selected.loginTime },
-                  { label: "Last Active", value: selected.lastActive },
-                  { label: "MFA", value: selected.mfa ? "Enabled" : "Disabled" },
-                  { label: "Session Duration", value: "32 min" },
+                  { label: "Event ID", value: selected.id },
+                  { label: "Action/Type", value: selected.action || selected.title },
+                  { label: "IP Address", value: selected.ipAddress || getMetadata(selected.note).ip },
+                  { label: "Timestamp", value: new Date(selected.createdAt).toLocaleString() },
+                  { label: "Severity", value: selected.severity || "Info" },
                 ].map(({ label, value }) => (
-                  <div key={label} className="flex justify-between">
-                    <span className="text-xs text-gray-500">{label}</span>
-                    <span className="text-xs font-medium text-gray-800 text-right max-w-[140px] truncate">{value}</span>
+                  <div key={label} className="flex justify-between items-start gap-4">
+                    <span className="text-xs text-gray-500 whitespace-nowrap">{label}</span>
+                    <span className="text-xs font-medium text-gray-800 text-right break-all">{value}</span>
                   </div>
                 ))}
               </div>
 
-              {/* Security */}
-              <div className="mb-4 pb-4 border-b border-gray-100">
-                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Security</h4>
-                {[
-                  { label: "Risk Level", value: "Low", color: "text-green-600" },
-                  { label: "Device Trust", value: "Trusted", color: "text-green-600" },
-                  { label: "IP Reputation", value: "Clean", color: "text-green-600" },
-                ].map(({ label, value, color }) => (
-                  <div key={label} className="flex justify-between py-1">
-                    <span className="text-xs text-gray-500">{label}</span>
-                    <span className={`text-xs font-semibold ${color} flex items-center gap-1`}>
-                      <CheckCircle2 size={11} /> {value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Recent Activity */}
-              <div className="mb-4">
-                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Recent Activity</h4>
-                <div className="space-y-2">
-                  {[
-                    { time: "11:28 AM", action: "Login successful", sub: "MFA authentication successful" },
-                    { time: "11:28 AM", action: "Accessed Dashboard", sub: "" },
-                    { time: "11:30 AM", action: "Viewed Lead Details", sub: "" },
-                    { time: "11:35 AM", action: "Uploaded File", sub: "Brochure_Honda_City_ZX.pdf" },
-                  ].map((ev, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.07 }}
-                      className="flex gap-2"
-                    >
-                      <span className="text-xs text-gray-400 w-16 flex-shrink-0">{ev.time}</span>
-                      <div>
-                        <p className="text-xs font-medium text-gray-700 flex items-center gap-1">
-                          <CheckCircle2 size={10} className="text-green-500" /> {ev.action}
-                        </p>
-                        {ev.sub && <p className="text-xs text-gray-400">{ev.sub}</p>}
-                      </div>
-                    </motion.div>
-                  ))}
+              {/* Note / Body */}
+              <div className="mb-6 pb-6 border-b border-gray-100">
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Message</h4>
+                <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    {selected.body || getMetadata(selected.note).message || "No additional information."}
+                  </p>
                 </div>
               </div>
 
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="btn btn-error btn-outline btn-sm w-full"
-              >
-                Terminate Session
-              </motion.button>
+              {/* Context */}
+              {selected.summary && (
+                <div className="mb-6">
+                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Security Analysis</h4>
+                  <div className="p-3 bg-red-50 rounded-lg border border-red-100">
+                    <p className="text-xs text-red-700 leading-relaxed">
+                      {selected.summary}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2 mt-auto pt-4">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="btn btn-sm w-full bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+                  onClick={() => {
+                    const email = selected.user?.email;
+                    if (email) window.open(`mailto:${email}`);
+                  }}
+                >
+                  Contact User
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="btn btn-error btn-outline btn-sm w-full"
+                  onClick={() => {
+                    if (confirm("Are you sure you want to flag this event for investigation?")) {
+                      alert("Event flagged for admin review.");
+                    }
+                  }}
+                >
+                  Investigate
+                </motion.button>
+              </div>
             </div>
           </motion.aside>
         )}
@@ -346,3 +409,4 @@ export default function SessionSecurityPage() {
     </div>
   );
 }
+

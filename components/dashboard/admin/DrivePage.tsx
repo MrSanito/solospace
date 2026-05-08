@@ -44,6 +44,8 @@ const itemVariants = {
 };
 
 import { useAuth } from "@/components/auth/AuthContext";
+import PermissionGuard from "@/components/auth/PermissionGuard";
+import { PermissionKey } from "@prisma/client";
 
 export default function DrivePage() {
   const { user } = useAuth();
@@ -152,7 +154,8 @@ export default function DrivePage() {
   });
 
   return (
-    <div className="flex h-full">
+    <PermissionGuard permission={PermissionKey.FILE_VIEW}>
+      <div className="flex h-full">
       <div className="flex-1 overflow-auto p-6 min-w-0">
         {/* Header */}
         <motion.div
@@ -595,6 +598,7 @@ export default function DrivePage() {
           </div>
         )}
       </AnimatePresence>
-    </div>
+      </div>
+    </PermissionGuard>
   );
 }

@@ -51,6 +51,8 @@ const rowVariants = {
   visible: { opacity: 1, x: 0 },
 };
 
+import PermissionGuard from "@/components/auth/PermissionGuard";
+
 export default function AuditLogPage() {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -126,223 +128,225 @@ export default function AuditLogPage() {
   };
 
   return (
-    <div className="p-6 overflow-auto h-full">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-start justify-between mb-5"
-      >
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Audit Log</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Track and review all activities across the system.</p>
-        </div>
-        <motion.button whileHover={{ scale: 1.03 }} className="btn btn-sm btn-outline gap-2 bg-white">
-          <Download size={14} /> Export
-        </motion.button>
-      </motion.div>
-
-      {/* Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <PermissionGuard permission="AUDIT_LOGS">
+      <div className="p-6 overflow-auto h-full">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-start justify-between mb-5"
+        >
           <div>
-            <label className="text-xs font-medium text-gray-500 mb-1 block">Quick Search</label>
-            <div className="relative">
-              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="User, Lead or Action..."
-                className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white"
-              />
+            <h1 className="text-2xl font-bold text-gray-900">Audit Log</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Track and review all activities across the system.</p>
+          </div>
+          <motion.button whileHover={{ scale: 1.03 }} className="btn btn-sm btn-outline gap-2 bg-white">
+            <Download size={14} /> Export
+          </motion.button>
+        </motion.div>
+
+        {/* Filters */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="text-xs font-medium text-gray-500 mb-1 block">Quick Search</label>
+              <div className="relative">
+                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="User, Lead or Action..."
+                  className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 mb-1 block">Action Type</label>
+              <select 
+                value={actionFilter}
+                onChange={(e) => setActionFilter(e.target.value)}
+                className="select select-bordered select-sm w-full text-xs bg-white h-[34px] min-h-[34px]"
+              >
+                <option value="All">All Actions</option>
+                {Object.keys(actionConfig).map(a => (
+                  <option key={a} value={a}>{actionConfig[a].label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="lg:col-span-2 flex items-end justify-end">
+               <button
+                onClick={() => {
+                  setSearch("");
+                  setActionFilter("All");
+                }}
+                className="btn btn-sm btn-ghost text-blue-600 gap-1.5 text-xs h-[34px] min-h-[34px]"
+              >
+                <FilterX size={14} /> Clear All Filters
+              </button>
             </div>
           </div>
-          <div>
-            <label className="text-xs font-medium text-gray-500 mb-1 block">Action Type</label>
-            <select 
-              value={actionFilter}
-              onChange={(e) => setActionFilter(e.target.value)}
-              className="select select-bordered select-sm w-full text-xs bg-white h-[34px] min-h-[34px]"
-            >
-              <option value="All">All Actions</option>
-              {Object.keys(actionConfig).map(a => (
-                <option key={a} value={a}>{actionConfig[a].label}</option>
-              ))}
-            </select>
+        </motion.div>
+
+        {/* Results bar */}
+        <div className="flex items-center gap-3 mb-4 px-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600 font-semibold">{filtered.length}</span>
+            <span className="text-sm text-gray-400 font-medium">Activities found</span>
           </div>
-          <div className="lg:col-span-2 flex items-end justify-end">
-             <button
-              onClick={() => {
-                setSearch("");
-                setActionFilter("All");
-              }}
-              className="btn btn-sm btn-ghost text-blue-600 gap-1.5 text-xs h-[34px] min-h-[34px]"
+          <div className="ml-auto flex items-center gap-2">
+            <button 
+              onClick={fetchLogs}
+              className={`btn btn-sm btn-ghost btn-square border border-gray-200 bg-white ${loading ? "loading" : ""}`}
+              disabled={loading}
             >
-              <FilterX size={14} /> Clear All Filters
+              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            </button>
+            <button className="btn btn-sm btn-ghost gap-1.5 border border-gray-200 bg-white">
+              <SlidersHorizontal size={14} /> Columns
             </button>
           </div>
         </div>
-      </motion.div>
 
-      {/* Results bar */}
-      <div className="flex items-center gap-3 mb-4 px-1">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600 font-semibold">{filtered.length}</span>
-          <span className="text-sm text-gray-400 font-medium">Activities found</span>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <button 
-            onClick={fetchLogs}
-            className={`btn btn-sm btn-ghost btn-square border border-gray-200 bg-white ${loading ? "loading" : ""}`}
-            disabled={loading}
-          >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-          </button>
-          <button className="btn btn-sm btn-ghost gap-1.5 border border-gray-200 bg-white">
-            <SlidersHorizontal size={14} /> Columns
-          </button>
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
-        <div className="overflow-x-auto">
-          <table className="table table-sm w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="text-[11px] uppercase tracking-wider font-bold text-gray-500 py-3 text-left px-4">Time</th>
-                <th className="text-[11px] uppercase tracking-wider font-bold text-gray-500 py-3 text-left px-4">User / Actor</th>
-                <th className="text-[11px] uppercase tracking-wider font-bold text-gray-500 py-3 text-left px-4">Action</th>
-                <th className="text-[11px] uppercase tracking-wider font-bold text-gray-500 py-3 text-left px-4">Lead / Context</th>
-                <th className="text-[11px] uppercase tracking-wider font-bold text-gray-500 py-3 text-left px-4">Field</th>
-                <th className="text-[11px] uppercase tracking-wider font-bold text-gray-500 py-3 text-left px-4">Details</th>
-                <th className="text-[11px] uppercase tracking-wider font-bold text-gray-500 py-3 text-center px-4">IP</th>
-              </tr>
-            </thead>
-            <motion.tbody variants={containerVariants} initial="hidden" animate="visible" key={search + actionFilter + logs.length}>
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="py-20 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <span className="loading loading-spinner loading-md text-blue-600"></span>
-                      <p className="text-sm text-gray-500 font-medium">Fetching audit trail...</p>
-                    </div>
-                  </td>
+        {/* Table */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+          <div className="overflow-x-auto">
+            <table className="table table-sm w-full border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="text-[11px] uppercase tracking-wider font-bold text-gray-500 py-3 text-left px-4">Time</th>
+                  <th className="text-[11px] uppercase tracking-wider font-bold text-gray-500 py-3 text-left px-4">User / Actor</th>
+                  <th className="text-[11px] uppercase tracking-wider font-bold text-gray-500 py-3 text-left px-4">Action</th>
+                  <th className="text-[11px] uppercase tracking-wider font-bold text-gray-500 py-3 text-left px-4">Lead / Context</th>
+                  <th className="text-[11px] uppercase tracking-wider font-bold text-gray-500 py-3 text-left px-4">Field</th>
+                  <th className="text-[11px] uppercase tracking-wider font-bold text-gray-500 py-3 text-left px-4">Details</th>
+                  <th className="text-[11px] uppercase tracking-wider font-bold text-gray-500 py-3 text-center px-4">IP</th>
                 </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-20 text-center">
-                    <div className="flex flex-col items-center gap-3 text-gray-400">
-                      <div className="p-4 bg-gray-50 rounded-full">
-                        <Search size={32} />
+              </thead>
+              <motion.tbody variants={containerVariants} initial="hidden" animate="visible" key={search + actionFilter + logs.length}>
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="py-20 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <span className="loading loading-spinner loading-md text-blue-600"></span>
+                        <p className="text-sm text-gray-500 font-medium">Fetching audit trail...</p>
                       </div>
-                      <p className="text-sm font-medium">No activity found for current filters</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((entry) => {
-                  const cfg = actionConfig[entry.action] || actionConfig.default;
-                  const ActionIcon = cfg.icon;
-                  return (
-                    <motion.tr
-                      key={entry.id}
-                      variants={rowVariants}
-                      whileHover={{ backgroundColor: "rgba(59,130,246,0.02)" }}
-                      className="border-b border-gray-100 transition-colors"
-                    >
-                      <td className="py-3 text-xs text-gray-500 whitespace-nowrap px-4">
-                        {new Intl.DateTimeFormat('en-IN', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: true
-                        }).format(new Date(entry.createdAt))}
-                      </td>
-                      <td className="px-4">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-7 h-7 rounded-full ${getUserColor(entry.actorName)} text-white text-[10px] font-bold flex items-center justify-center shrink-0`}>
-                            {getInitials(entry.actorName)}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-xs font-semibold text-gray-800 truncate">{entry.actorName}</p>
-                            <p className="text-[10px] text-gray-400 uppercase tracking-tight">{entry.actorType}</p>
-                          </div>
+                    </td>
+                  </tr>
+                ) : filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-20 text-center">
+                      <div className="flex flex-col items-center gap-3 text-gray-400">
+                        <div className="p-4 bg-gray-50 rounded-full">
+                          <Search size={32} />
                         </div>
-                      </td>
-                      <td className="px-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${cfg.bg} ${cfg.text}`}>
-                          <ActionIcon size={12} />
-                          {cfg.label}
-                        </span>
-                      </td>
-                      <td className="px-4">
-                        {entry.lead ? (
-                          <div className="min-w-0">
-                            <p className="text-xs font-medium text-blue-600 hover:underline cursor-pointer truncate">
-                              {entry.lead.contactName}
-                            </p>
-                            <p className="text-[10px] text-gray-400 font-mono">ID: {entry.leadId?.substring(0, 8)}</p>
+                        <p className="text-sm font-medium">No activity found for current filters</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((entry) => {
+                    const cfg = actionConfig[entry.action] || actionConfig.default;
+                    const ActionIcon = cfg.icon;
+                    return (
+                      <motion.tr
+                        key={entry.id}
+                        variants={rowVariants}
+                        whileHover={{ backgroundColor: "rgba(59,130,246,0.02)" }}
+                        className="border-b border-gray-100 transition-colors"
+                      >
+                        <td className="py-3 text-xs text-gray-500 whitespace-nowrap px-4">
+                          {new Intl.DateTimeFormat('en-IN', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                          }).format(new Date(entry.createdAt))}
+                        </td>
+                        <td className="px-4">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-7 h-7 rounded-full ${getUserColor(entry.actorName)} text-white text-[10px] font-bold flex items-center justify-center shrink-0`}>
+                              {getInitials(entry.actorName)}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold text-gray-800 truncate">{entry.actorName}</p>
+                              <p className="text-[10px] text-gray-400 uppercase tracking-tight">{entry.actorType}</p>
+                            </div>
                           </div>
-                        ) : (
-                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">SYSTEM</span>
-                        )}
-                      </td>
-                      <td className="px-4">
-                        {entry.field ? (
-                          <span className="text-xs font-semibold text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded capitalize">
-                            {entry.field.replace(/_/g, ' ')}
+                        </td>
+                        <td className="px-4">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${cfg.bg} ${cfg.text}`}>
+                            <ActionIcon size={12} />
+                            {cfg.label}
                           </span>
-                        ) : (
-                          <span className="text-gray-300">—</span>
-                        )}
-                      </td>
-                      <td className="px-4">
-                        <div className="max-w-xs">
-                          {entry.note ? (
-                            <p className="text-xs text-gray-600 italic line-clamp-1">"{entry.note}"</p>
-                          ) : entry.beforeValue || entry.afterValue ? (
-                            <div className="flex items-center gap-1.5 text-[10px]">
-                              <span className="text-gray-400 truncate max-w-[80px]">{formatValue(entry.beforeValue)}</span>
-                              <span className="text-gray-300">→</span>
-                              <span className="text-blue-600 font-medium truncate max-w-[80px]">{formatValue(entry.afterValue)}</span>
+                        </td>
+                        <td className="px-4">
+                          {entry.lead ? (
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-blue-600 hover:underline cursor-pointer truncate">
+                                {entry.lead.contactName}
+                              </p>
+                              <p className="text-[10px] text-gray-400 font-mono">ID: {entry.leadId?.substring(0, 8)}</p>
                             </div>
                           ) : (
-                            <span className="text-gray-300 text-[10px]">No extra details</span>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">SYSTEM</span>
                           )}
-                        </div>
-                      </td>
-                      <td className="text-[10px] font-mono text-gray-400 px-4 text-center">
-                        {entry.ipAddress || "—"}
-                      </td>
-                    </motion.tr>
-                  );
-                })
-              )}
-            </motion.tbody>
-          </table>
+                        </td>
+                        <td className="px-4">
+                          {entry.field ? (
+                            <span className="text-xs font-semibold text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded capitalize">
+                              {entry.field.replace(/_/g, ' ')}
+                            </span>
+                          ) : (
+                            <span className="text-gray-300">—</span>
+                          )}
+                        </td>
+                        <td className="px-4">
+                          <div className="max-w-xs">
+                            {entry.note ? (
+                              <p className="text-xs text-gray-600 italic line-clamp-1">"{entry.note}"</p>
+                            ) : entry.beforeValue || entry.afterValue ? (
+                              <div className="flex items-center gap-1.5 text-[10px]">
+                                <span className="text-gray-400 truncate max-w-[80px]">{formatValue(entry.beforeValue)}</span>
+                                <span className="text-gray-300">→</span>
+                                <span className="text-blue-600 font-medium truncate max-w-[80px]">{formatValue(entry.afterValue)}</span>
+                              </div>
+                            ) : (
+                              <span className="text-gray-300 text-[10px]">No extra details</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="text-[10px] font-mono text-gray-400 px-4 text-center">
+                          {entry.ipAddress || "—"}
+                        </td>
+                      </motion.tr>
+                    );
+                  })
+                )}
+              </motion.tbody>
+            </table>
+          </div>
         </div>
-      </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-between mt-5 px-1">
-        <p className="text-xs font-medium text-gray-500">
-          Showing <span className="text-gray-900">{filtered.length}</span> of <span className="text-gray-900">{logs.length}</span> recorded logs
-        </p>
-        <div className="flex items-center gap-1.5">
-          <button className="btn btn-xs btn-ghost border border-gray-200 bg-white h-8 w-8 p-0"><ChevronLeft size={14} /></button>
-          <button className="btn btn-xs btn-primary h-8 min-w-[32px] font-bold">1</button>
-          <button className="btn btn-xs btn-ghost border border-gray-200 bg-white h-8 w-8 p-0"><ChevronRight size={14} /></button>
+        {/* Pagination */}
+        <div className="flex items-center justify-between mt-5 px-1">
+          <p className="text-xs font-medium text-gray-500">
+            Showing <span className="text-gray-900">{filtered.length}</span> of <span className="text-gray-900">{logs.length}</span> recorded logs
+          </p>
+          <div className="flex items-center gap-1.5">
+            <button className="btn btn-xs btn-ghost border border-gray-200 bg-white h-8 w-8 p-0"><ChevronLeft size={14} /></button>
+            <button className="btn btn-xs btn-primary h-8 min-w-[32px] font-bold">1</button>
+            <button className="btn btn-xs btn-ghost border border-gray-200 bg-white h-8 w-8 p-0"><ChevronRight size={14} /></button>
+          </div>
         </div>
       </div>
-    </div>
+    </PermissionGuard>
   );
 }

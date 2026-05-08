@@ -198,7 +198,7 @@ export default function DashboardView({
             <p className="text-sm font-bold text-gray-800 mb-6">Critical Actions Needed</p>
             <div className="space-y-4">
               {[
-                { label: "Review 12 New Alerts", desc: "Flagged by EWS System", type: "high", icon: AlertTriangle },
+                { label: `Review ${kpis.alertsCount || 0} New Alerts`, desc: "Flagged by EWS System", type: "high", icon: AlertTriangle },
                 { label: "Approve 4 Access Requests", desc: "Pending permission updates", type: "medium", icon: Lock },
                 { label: "Audit Drive Access", desc: "Monthly storage review due", type: "low", icon: FileText },
               ].map((action, i) => (

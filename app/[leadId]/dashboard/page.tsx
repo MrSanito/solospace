@@ -243,9 +243,9 @@ export default function LeadDashboard() {
       <main className={`flex-1 overflow-hidden flex flex-col ${activeTab === "messages" ? "p-0" : "p-4 md:p-8"}`}>
         {activeTab !== "messages" && (
           <header className="flex justify-between items-center mb-8 shrink-0">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">Welcome, {leadData?.name || "Lead"}!</h1>
-              <p className="text-gray-500 text-sm">Tracking your project with {leadData?.organization || "us"}</p>
+            <div className="min-w-0">
+              <h1 className="text-xl md:text-2xl font-bold text-gray-800 truncate">Welcome, {leadData?.name || "Lead"}!</h1>
+              <p className="text-gray-500 text-xs md:text-sm truncate">Tracking your project with {leadData?.organization || "us"}</p>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
@@ -262,7 +262,7 @@ export default function LeadDashboard() {
         {activeTab === "overview" && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8 flex-1 overflow-y-auto p-4 md:p-0">
             {/* Dashboard Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
               <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm transition-transform hover:scale-[1.02]">
                 <p className="text-gray-400 text-xs font-black uppercase tracking-widest mb-1">Project Status</p>
                 <p className="text-2xl font-bold text-gray-800">{thread?.lead?.stage || "NEW"}</p>
@@ -305,7 +305,7 @@ export default function LeadDashboard() {
                                     <p className="font-bold text-sm text-gray-800">
                                         {log.action === "STAGE_CHANGED" ? "Status Updated" : log.action === "CHAT" ? "Message Sent" : "Account Update"}
                                     </p>
-                                    <p className="text-xs text-gray-500 mt-1">{log.note || "System update processed."}</p>
+                                    <p className="text-xs text-gray-500 mt-1 break-words line-clamp-2">{log.note || "System update processed."}</p>
                                     <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-2 block">
                                         {new Date(log.createdAt).toLocaleDateString()} · {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </span>
@@ -472,7 +472,7 @@ export default function LeadDashboard() {
                                                         ? "bg-blue-600 text-white border-blue-500 rounded-br-sm" 
                                                         : "bg-white text-gray-700 border-gray-100 rounded-bl-sm"
                                                 }`}>
-                                                    <p className="whitespace-pre-wrap font-medium">{msg.content}</p>
+                                                    <p className="whitespace-pre-wrap font-medium break-words">{msg.content}</p>
                                                     
                                                     {msg.attachments?.map((file: any) => (
                                                         <div key={file.id} className={`mt-2 flex items-center gap-2 p-2 rounded-xl border ${isLead ? "bg-blue-500 border-blue-400" : "bg-gray-50 border-gray-100"}`}>

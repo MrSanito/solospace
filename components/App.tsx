@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, MessageSquare, HardDrive, FileText,
@@ -308,6 +308,16 @@ function LoginPage({ setPage }: { setPage: (p: Page) => void }) {
 // ─── OVERVIEW PAGE ────────────────────────────────────────────────────────────
 function OverviewPage({ setPage }: { setPage: (p: Page) => void }) {
   const [showSearch, setShowSearch] = useState(false);
+  const [statsData, setStatsData] = useState<any>(null);
+
+  useEffect(() => {
+    fetch("/api/dashboard/stats")
+      .then(res => res.json())
+      .then(data => setStatsData(data))
+      .catch(err => console.error("Failed to fetch stats", err));
+  }, []);
+
+  const kpis = statsData?.kpis || {};
 
   const recentActivity = [
     { name: "Rahul Mehta", action: "Sent a file", dot: "bg-gray-400" },
@@ -399,9 +409,9 @@ function OverviewPage({ setPage }: { setPage: (p: Page) => void }) {
           {/* Stats */}
           <motion.div variants={fadeInUp} className="grid grid-cols-3 gap-4">
             {[
-              { label: "Active Chats", value: "128", sub: "Live conversations", color: "text-blue-600", bg: "bg-blue-50" },
-              { label: "Alerts (EWS)", value: "12", sub: "Require attention", color: "text-red-600", bg: "bg-red-50" },
-              { label: "Drive Status", value: "24%", sub: "1.2 TB of 5 TB used", color: "text-emerald-600", bg: "bg-emerald-50" },
+              { label: "Active Chats", value: kpis.activeChats?.toString() || "0", sub: "Live conversations", color: "text-blue-600", bg: "bg-blue-50" },
+              { label: "Alerts (EWS)", value: kpis.activeAlertsCount?.toString() || "0", sub: "Require attention", color: "text-red-600", bg: "bg-red-50" },
+              { label: "Drive Status", value: kpis.storageFormatted || "0 MB", sub: "1.2 TB of 5 TB used", color: "text-emerald-600", bg: "bg-emerald-50" },
             ].map((s) => (
               <motion.div whileHover={{ y: -2 }} key={s.label} className={`${s.bg} rounded-xl p-4 border border-white shadow-sm`}>
                 <p className="text-xs font-semibold text-gray-500 mb-1">{s.label}</p>
@@ -494,6 +504,7 @@ function OverviewPage({ setPage }: { setPage: (p: Page) => void }) {
 // ─── CHAT OVERSIGHT PAGE ──────────────────────────────────────────────────────
 function ChatOversightPage() {
   const [selected, setSelected] = useState(0);
+  const kpis: any = {}; // Placeholder to fix build error
 
   const conversations = [
     { initials: "AS", name: "Amit Sharma", agent: "Rahul Mehta", preview: "Thanks, please share the brochure.", time: "11:03 AM", unread: 2, wa: true },
@@ -549,7 +560,7 @@ function ChatOversightPage() {
               <Filter size={14} className="text-gray-400 cursor-pointer" />
             </div>
             <div className="flex gap-2 text-xs">
-              {["All (128)", "Employees", "Leads"].map((t, i) => (
+              {[`All (${kpis.totalLeads || 0})`, "Employees", "Leads"].map((t, i) => (
                 <button key={t} className={`px-2.5 py-1 rounded-full font-medium transition-colors ${i === 0 ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-100"}`}>{t}</button>
               ))}
             </div>

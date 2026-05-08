@@ -58,6 +58,10 @@ export async function POST(req: Request) {
           note: `Unlocked file: ${file.name || file.fileName}`,
           source: "UI"
         });
+
+        // EWS Check: File Access Spike
+        const { checkFileAccessSpike } = await import("@/lib/ews");
+        await checkFileAccessSpike(decoded.userId, user.organizationId, `Unlocked file: ${file.name || file.fileName}`);
       }
 
       return NextResponse.json({ url: file.fileUrl });

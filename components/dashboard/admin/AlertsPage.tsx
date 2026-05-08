@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Info,
@@ -13,6 +13,8 @@ import {
   ChevronRight,
   X,
 } from "lucide-react";
+import PermissionGuard from "@/components/auth/PermissionGuard";
+import { PermissionKey } from "@prisma/client";
 
 const slideInRight = {
   initial: { opacity: 0, x: 40 },
@@ -21,18 +23,27 @@ const slideInRight = {
 };
 
 export default function AlertsPage() {
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedAlert, setSelectedAlert] = useState(0);
 
-  const alerts = [
-    { severity: "High", label: "Abnormal download activity", sub: "12 files downloaded in short time", user: "Rahul Mehta", client: "Amit Sharma", type: "Download Spike", time: "19 Apr 2024, 11:28 AM", status: "New" },
-    { severity: "High", label: "Access to restricted file", sub: "Viewed restricted file", user: "Amit Sharma", client: "Pooja Patel", type: "Restricted Access", time: "19 Apr 2024, 11:18 AM", status: "New" },
-    { severity: "Medium", label: "WhatsApp escape attempt blocked", sub: "Multiple attempts detected", user: "Karan Trivedi", client: "Neha Singh", type: "Escape Attempt", time: "19 Apr 2024, 10:45 AM", status: "Investigating" },
-    { severity: "Medium", label: "Repeated file access", sub: "Same file accessed multiple times", user: "Pooja Patel", client: "Amit Sharma", type: "Repeated Access", time: "19 Apr 2024, 10:30 AM", status: "New" },
-    { severity: "High", label: "Login from new device", sub: "Unrecognized device detected", user: "Rahul Mehta", client: "—", type: "Security", time: "19 Apr 2024, 09:52 AM", status: "New" },
-    { severity: "Low", label: "Bulk message to leads", sub: "High volume messages sent", user: "Amit Sharma", client: "Multiple Leads", type: "Message Spike", time: "19 Apr 2024, 09:10 AM", status: "Monitoring" },
-    { severity: "Medium", label: "File upload to external source", sub: "File shared outside platform", user: "Neha Singh", client: "Vikram Tiwari", type: "External Share", time: "18 Apr 2024, 06:22 PM", status: "Investigating" },
-    { severity: "Low", label: "Unusual login time", sub: "Login outside working hours", user: "Sandeep Mishra", client: "—", type: "Security", time: "18 Apr 2024, 11:47 PM", status: "Monitoring" },
-  ];
+  useEffect(() => {
+    fetchAlerts();
+  }, []);
+
+  const fetchAlerts = async () => {
+    try {
+      const res = await fetch("/api/alerts");
+      if (res.ok) {
+        const data = await res.json();
+        setAlerts(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch alerts");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const severityColor = (s: string) => ({
     High: "text-red-600 bg-red-50 border-red-200",
@@ -50,7 +61,8 @@ export default function AlertsPage() {
   const a = alerts[selectedAlert];
 
   return (
-    <div className="flex flex-1 min-h-0 bg-gray-50">
+    <PermissionGuard permission={PermissionKey.AUDIT_LOGS}>
+      <div className="flex flex-1 min-h-0 bg-gray-50">
       <div className="flex flex-1 min-h-0">
         <div className="flex-1 flex flex-col min-w-0">
           <div className="px-6 pt-6 pb-4 bg-white border-b border-gray-200">
@@ -117,43 +129,59 @@ export default function AlertsPage() {
                 </tr>
               </thead>
               <tbody>
-                {alerts.map((row, i) => (
-                  <motion.tr
-                    key={i}
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    onClick={() => setSelectedAlert(i)}
-                    className={`border-b border-gray-100 cursor-pointer transition-colors ${selectedAlert === i ? "bg-blue-50" : "hover:bg-gray-50"}`}
-                  >
-                    <td className="px-4 py-3">
-                      <span className={`flex items-center gap-1.5 text-[11px] font-bold px-2 py-1 rounded-lg border w-fit ${severityColor(row.severity)}`}>
-                        <AlertTriangle size={10} /> {row.severity}
-                      </span>
+                {loading ? (
+                  <tr>
+                    <td colSpan={8} className="text-center py-12">
+                      <span className="loading loading-spinner loading-md text-blue-600" />
                     </td>
-                    <td className="px-4 py-3">
-                      <p className="font-semibold text-gray-800">{row.label}</p>
-                      <p className="text-gray-400">{row.sub}</p>
+                  </tr>
+                ) : alerts.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="text-center py-12 text-gray-500">
+                      No security alerts found.
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold text-[9px] flex items-center justify-center">
-                          {row.user.split(" ").map(n => n[0]).join("")}
+                  </tr>
+                ) : (
+                  alerts.map((row, i) => (
+                    <motion.tr
+                      key={row.id || i}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      onClick={() => setSelectedAlert(i)}
+                      className={`border-b border-gray-100 cursor-pointer transition-colors ${selectedAlert === i ? "bg-blue-50" : "hover:bg-gray-50"}`}
+                    >
+                      <td className="px-4 py-3">
+                        <span className={`flex items-center gap-1.5 text-[11px] font-bold px-2 py-1 rounded-lg border w-fit ${severityColor(row.severity)}`}>
+                          <AlertTriangle size={10} /> {row.severity}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="font-semibold text-gray-800">{row.title}</p>
+                        <p className="text-gray-400">{row.body}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold text-[9px] flex items-center justify-center uppercase">
+                            {row.user?.name?.split(" ").map((n: string) => n[0]).join("") || "U"}
+                          </div>
+                          <span className="text-gray-700">{row.user?.name || "System"}</span>
                         </div>
-                        <span className="text-gray-700">{row.user}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{row.client}</td>
-                    <td className="px-4 py-3 text-gray-500">{row.type}</td>
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{row.time}</td>
-                    <td className="px-4 py-3">
-                      <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${statusColor(row.status)}`}>{row.status}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <button className="text-gray-400 hover:text-gray-600"><MoreHorizontal size={16} /></button>
-                    </td>
-                  </motion.tr>
-                ))}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">{row.lead?.contactName || "—"}</td>
+                      <td className="px-4 py-3 text-gray-500">{row.title}</td>
+                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                        {new Date(row.createdAt).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${statusColor(row.status)}`}>{row.status}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <button className="text-gray-400 hover:text-gray-600"><MoreHorizontal size={16} /></button>
+                      </td>
+                    </motion.tr>
+                  ))
+                )}
               </tbody>
             </table>
 
@@ -199,22 +227,22 @@ export default function AlertsPage() {
 
             {a && (
               <div className="p-4">
-                <p className="text-sm font-bold text-gray-900 mb-0.5">{a.label}</p>
-                <p className="text-[11px] text-blue-500 mb-4">Alert ID: EWS-2024-0419-0001</p>
+                <p className="text-sm font-bold text-gray-900 mb-0.5">{a.title}</p>
+                <p className="text-[11px] text-blue-500 mb-4">Alert ID: {a.id.substring(0, 8).toUpperCase()}</p>
 
                 <div className="bg-gray-50 rounded-lg p-3 mb-4">
                   <p className="text-xs font-semibold text-gray-700 mb-1">Summary</p>
-                  <p className="text-[11px] text-gray-500">{a.user} {a.severity === "High" && a.type === "Download Spike" ? "downloaded 12 files in a short period of 2 minutes." : `triggered a ${a.type} alert.`}</p>
+                  <p className="text-[11px] text-gray-500">{a.summary || a.body}</p>
                 </div>
 
                 <p className="text-xs font-bold text-gray-700 mb-2">Details</p>
                 {[
-                  ["User", a.user + " (Employee)"],
-                  ["Lead / Client", a.client],
-                  ["IP Address", "106.201.45.12"],
-                  ["Device", "Chrome on Windows"],
-                  ["Location", "Mumbai, India"],
-                  ["Time", a.time],
+                  ["User", (a.user?.name || "System") + ` (${a.user?.role || "SYSTEM"})`],
+                  ["Lead / Client", a.lead?.contactName || "—"],
+                  ["IP Address", a.ipAddress || "—"],
+                  ["Device", a.device || "—"],
+                  ["Location", a.location || "—"],
+                  ["Time", new Date(a.createdAt).toLocaleString()],
                 ].map(([k, v]) => (
                   <div key={k} className="flex justify-between py-2 border-b border-gray-50">
                     <span className="text-[11px] text-gray-400">{k}</span>
@@ -268,7 +296,8 @@ export default function AlertsPage() {
             )}
           </motion.div>
         </AnimatePresence>
+        </div>
       </div>
-    </div>
+    </PermissionGuard>
   );
 }

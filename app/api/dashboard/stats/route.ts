@@ -40,6 +40,10 @@ export async function GET() {
       newLeadsCount,
       alertsCount,
       followUpsTotal,
+      activeEmployees,
+      storageUsedResult,
+      activeChats,
+      activeAlertsCount,
     ] = await Promise.all([
       prisma.lead.count({ where: baseWhere }),
       prisma.lead.count({ where: { ...baseWhere, createdAt: { gte: startOfWeek } } }),
@@ -73,7 +77,23 @@ export async function GET() {
           status: "PENDING",
         },
       }),
+      prisma.user.count({ where: { organizationId: user.organizationId } }),
+      prisma.driveFile.aggregate({
+        where: { organizationId: user.organizationId },
+        _sum: { fileSize: true }
+      }),
+      prisma.chatThread.count({
+        where: { organizationId: user.organizationId, status: "Active" }
+      }),
+      prisma.alert.count({
+        where: { organizationId: user.organizationId, isRead: false }
+      }),
     ]);
+
+    const storageBytes = Number(storageUsedResult?._sum?.fileSize || 0);
+    const storageFormatted = storageBytes > 1024 * 1024 * 1024 
+      ? (storageBytes / (1024 * 1024 * 1024)).toFixed(1) + " GB"
+      : (storageBytes / (1024 * 1024)).toFixed(1) + " MB";
 
     // Stage distribution for pipeline
     const stageOrder = ["NEW", "CONTACTED", "COLD_CHATTING", "MEETING_SET", "NEGOTIATION", "NOT_INTERESTED"];
@@ -117,6 +137,10 @@ export async function GET() {
         alertsCount,
         newLeadsCount,
         followUpsTotal,
+        activeEmployees,
+        storageFormatted,
+        activeChats,
+        activeAlertsCount,
       },
       pipeline,
     });

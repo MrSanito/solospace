@@ -78,6 +78,10 @@ export async function POST(req: Request) {
       source: "UI"
     });
 
+    // EWS Check: Login Spike
+    const { checkLoginSpike } = await import("@/lib/ews");
+    await checkLoginSpike(user.id, user.organizationId);
+
     const response = NextResponse.json(
       { 
         message: "Login successful", 

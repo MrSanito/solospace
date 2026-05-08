@@ -4,6 +4,7 @@ import { EWSStatus } from "@prisma/client";
 export async function scanAuditLogsForSuspiciousActivity(organizationId: string) {
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000);
   
   const suspiciousActivities: any[] = [];
 
@@ -88,16 +89,16 @@ export async function scanAuditLogsForSuspiciousActivity(organizationId: string)
     });
   }
 
-  // 4. Repeated Access
+  // 4. Repeated Access (3+ times in 30 minutes)
   const repeatedAccess = await prisma.auditLog.groupBy({
     by: ['actorId', 'actorName', 'note'],
     where: {
       organizationId,
       action: 'DECRYPT',
-      createdAt: { gte: startOfToday },
+      createdAt: { gte: thirtyMinsAgo },
     },
     _count: { id: true },
-    having: { id: { _count: { gt: 10 } } },
+    having: { id: { _count: { gte: 3 } } },
   });
 
   for (const access of repeatedAccess) {
@@ -105,7 +106,7 @@ export async function scanAuditLogsForSuspiciousActivity(organizationId: string)
       userId: access.actorId,
       title: 'Repeated Access',
       body: 'Same file accessed multiple times',
-      summary: `${access.actorName} accessed the same file ${access._count.id} times today. Potential data scraping.`,
+      summary: `${access.actorName} accessed the same file "${access.note}" ${access._count.id} times in the last 30 minutes. Potential data scraping.`,
       status: 'NEW',
       severity: 'High'
     });
@@ -159,24 +160,24 @@ export async function scanAuditLogsForSuspiciousActivity(organizationId: string)
     });
   }
 
-  // 7. Multiple Login/Logout
+  // 7. Multiple Login/Logout (3+ times in 30 minutes)
   const loginLogoutSpikes = await prisma.auditLog.groupBy({
-    by: ['actorId', 'actorName'],
+    by: ['actorId', 'actorName', 'action'],
     where: {
       organizationId,
       action: { in: ['LOGIN', 'LOGOUT'] },
-      createdAt: { gte: startOfToday },
+      createdAt: { gte: thirtyMinsAgo },
     },
     _count: { id: true },
-    having: { id: { _count: { gt: 10 } } },
+    having: { id: { _count: { gte: 3 } } },
   });
 
   for (const spike of loginLogoutSpikes) {
     addActivity({
       userId: spike.actorId,
       title: 'Security',
-      body: 'Multiple login/logout activity',
-      summary: `${spike.actorName} had ${spike._count.id} session events today.`,
+      body: `Frequent ${spike.action.toLowerCase()} activity`,
+      summary: `${spike.actorName} had ${spike._count.id} ${spike.action.toLowerCase()} events in the last 30 minutes.`,
       status: 'NEW',
       severity: 'High'
     });

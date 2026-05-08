@@ -48,6 +48,12 @@ export async function POST(req: Request) {
       source: source || "UI",
     });
 
+    // EWS Check: File Access Spike
+    if (action === "DOWNLOAD" && note) {
+      const { checkFileAccessSpike } = await import("@/lib/ews");
+      await checkFileAccessSpike(user.id, user.organizationId, note);
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error creating audit log:", error);

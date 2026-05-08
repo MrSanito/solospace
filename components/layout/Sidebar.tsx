@@ -59,10 +59,18 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
       <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-0.5">
         {navItems
           .filter(item => {
-            if (user?.role === "SALES_REP") {
-              return item.id === "chat";
-            }
-            return true;
+            // CEO and Admin see everything
+            if (user?.role === "CEO" || user?.role === "ORG_ADMIN") return true;
+            
+            // If item has no permission requirement, show it (e.g. Overview)
+            if (!item.permission) return true;
+
+            // Check if user has the specific permission allowed in their custom role
+            const permission = (user as any)?.customRole?.permissions?.find(
+              (p: any) => p.permission === item.permission
+            );
+            
+            return permission?.allowed === true;
           })
           .map((item, i) => (
             <SidebarItem

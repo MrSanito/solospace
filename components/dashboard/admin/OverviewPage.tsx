@@ -20,13 +20,36 @@ const fadeUp = {
   animate: { opacity: 1, y: 0 },
 };
 
+import { useState, useEffect } from "react";
+
 export default function OverviewPage() {
+  const [kpis, setKpis] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/dashboard/stats")
+      .then(res => res.json())
+      .then(data => {
+        if (data.kpis) setKpis(data.kpis);
+        setLoading(false);
+      })
+      .catch(err => console.error("Failed to fetch stats", err));
+  }, []);
+
   const stats = [
-    { label: "Active Employees", val: "128", trend: "+12", icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Storage Used", val: "1.2 TB", trend: "+4%", icon: Shield, color: "text-indigo-600", bg: "bg-indigo-50" },
-    { label: "Active Chats", val: "45", trend: "+15%", icon: MessageSquare, color: "text-purple-600", bg: "bg-purple-50" },
-    { label: "Active Alerts", val: "12", trend: "-2", icon: AlertCircle, color: "text-red-600", bg: "bg-red-50" },
+    { label: "Active Employees", val: kpis?.activeEmployees?.toString() || "0", trend: "+0", icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "Storage Used", val: kpis?.storageFormatted || "0 MB", trend: "+0%", icon: Shield, color: "text-indigo-600", bg: "bg-indigo-50" },
+    { label: "Active Chats", val: kpis?.activeChats?.toString() || "0", trend: "+0%", icon: MessageSquare, color: "text-purple-600", bg: "bg-purple-50" },
+    { label: "Active Alerts", val: kpis?.activeAlertsCount?.toString() || "0", trend: "0", icon: AlertCircle, color: "text-red-600", bg: "bg-red-50" },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-gray-50">
+        <span className="loading loading-spinner loading-lg text-blue-600"></span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50 p-6">

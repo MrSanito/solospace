@@ -19,17 +19,21 @@ export async function POST() {
           select: { id: true, name: true, organizationId: true }
         });
 
-        if (user) {
-          await createAuditLog({
-            organizationId: user.organizationId,
-            actorType: "USER",
-            actorId: user.id,
-            actorName: user.name,
-            action: "LOGOUT",
-            note: "User logged out successfully",
-            source: "UI"
-          });
-        }
+          if (user) {
+            await createAuditLog({
+              organizationId: user.organizationId,
+              actorType: "USER",
+              actorId: user.id,
+              actorName: user.name,
+              action: "LOGOUT",
+              note: "User logged out successfully",
+              source: "UI"
+            });
+
+            // EWS Check: Login/Logout Spike
+            const { checkLoginSpike } = await import("@/lib/ews");
+            await checkLoginSpike(user.id, user.organizationId);
+          }
       } catch (jwtError) {
         console.error("JWT verification failed during logout:", jwtError);
       }

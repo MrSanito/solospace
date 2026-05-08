@@ -128,7 +128,7 @@ export default function DashboardView({
           {/* Activity Timeline */}
           <motion.div variants={fadeUp} className="lg:col-span-4 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col">
             <div className="flex justify-between items-center mb-6">
-              <p className="text-sm font-bold text-gray-800">Recent Protocols</p>
+              <p className="text-sm font-bold text-gray-800">Recent Activity</p>
               <button className="text-xs text-blue-600 font-bold hover:underline">View All</button>
             </div>
             <div className="space-y-6 flex-1 overflow-y-auto">

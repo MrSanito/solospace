@@ -127,7 +127,7 @@ export default function ChatWindow({ leadId, userId, senderType }: ChatWindowPro
             <MessageCircle size={20} />
           </div>
           <div>
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-tighter">Support Protocol</h3>
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-tighter">Support Team</h3>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> Active Connection
             </p>
@@ -143,7 +143,7 @@ export default function ChatWindow({ leadId, userId, senderType }: ChatWindowPro
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-2 opacity-50">
             <MessageCircle size={48} strokeWidth={1} />
-            <p className="text-[10px] font-black uppercase tracking-[0.2em]">Initialise Protocol</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em]">Start Conversation</p>
           </div>
         ) : (
           messages.map((msg) => (

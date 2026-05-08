@@ -83,6 +83,8 @@ export async function GET(req: Request) {
         messages: t.messages.map(m => ({
           ...m,
           senderName: m.senderId ? userMap[m.senderId]?.name : null,
+          senderRole: m.senderId ? userMap[m.senderId]?.role : "USER",
+          senderAvatar: m.senderId ? userMap[m.senderId]?.avatarUrl : null,
           content: decrypt(m.content),
           attachments: m.attachments.map(att => ({
             ...att,

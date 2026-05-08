@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useAuth } from "@/components/auth/AuthContext";
 import Sidebar from "@/components/layout/Sidebar";
-import Navbar from "@/components/layout/Navbar";
+import GlobalNavbar from "@/components/layout/GlobalNavbar";
 import { usePathname, useRouter } from "next/navigation";
 import { PageId } from "@/components/layout/Sidebar";
 
@@ -39,24 +39,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const handleNavigate = (page: PageId | string) => {
-    if (page.startsWith("protocol-")) {
-      const id = page.replace("protocol-", "");
-      router.push(`/dashboard?sf=${id}`);
-      return;
-    }
-
     if (page === "overview") router.push("/dashboard");
     else router.push(`/dashboard/${page}`);
   };
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 font-sans">
-      {/* ── New Sidebar ── */}
+      {/* ── Sidebar (Restored) ── */}
       <Sidebar currentPage={getCurrentPage()} onNavigate={handleNavigate} />
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* ── New TopBar (Navbar) ── */}
-        <Navbar />
+        {/* ── Global Navbar (Top Bar) ── */}
+        <GlobalNavbar />
 
         {/* ── Main Content Area ── */}
         <main className="flex-1 overflow-hidden relative">

@@ -42,9 +42,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    // For testing/quick-setup we used plain text. 
-    // In a real scenario, use bcrypt.compare(password, account.passwordHash)
-    if (account.passwordHash !== password) {
+    const bcrypt = await import("bcryptjs");
+    const isMatch = await bcrypt.compare(password, account.passwordHash);
+
+    if (!isMatch) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 

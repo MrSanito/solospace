@@ -19,7 +19,7 @@ const dmMono = DM_Mono({
 export const metadata: Metadata = {
   title: "Solo Space | Enterprise Messaging Portal",
   description: "A premium, high-precision Solo Space for lead communication.",
-};
+}; // Metadata configuration
 
 export default function RootLayout({
   children,

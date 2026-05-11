@@ -45,9 +45,6 @@ export default function Navbar({ onMenuClick, activeNav }: NavbarProps) {
           className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
         >
           <Bell size={18} className="text-gray-600" />
-          <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-            8
-          </span>
         </motion.button>
 
         {/* User Profile */}

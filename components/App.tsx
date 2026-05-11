@@ -83,11 +83,6 @@ function Sidebar({ page, setPage }: { page: Page; setPage: (p: Page) => void }) 
             >
               <item.icon size={16} className="shrink-0" />
               <span>{item.label}</span>
-              {item.badge && (
-                <span className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                  {item.badge}
-                </span>
-              )}
             </motion.div>
           );
         })}
@@ -137,11 +132,6 @@ function TopBar({
       </div>
       <div className="relative cursor-pointer">
         <Bell size={18} className="text-gray-500" />
-        {alertCount > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-            {alertCount}
-          </span>
-        )}
       </div>
       <div className="flex items-center gap-2">
         <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">OM</div>
@@ -538,7 +528,6 @@ function ChatOversightPage() {
         </div>
         <div className="relative">
           <Bell size={18} className="text-gray-500" />
-          <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">8</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">OM</div>
@@ -769,7 +758,11 @@ function AlertsPage() {
                 </h1>
                 <p className="text-sm text-gray-400">Early Warning System to detect and flag abnormal or risky activities.</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-2.5 py-1 bg-gray-50 text-gray-400 rounded-full text-[10px] font-bold border border-gray-200/50">
+                  <div className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-pulse"></div>
+                  AI AGENT PLUGIN — EMPTY
+                </div>
                 <button className="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 transition-colors">
                   <Settings size={12} /> Configure Rules
                 </button>
@@ -781,11 +774,11 @@ function AlertsPage() {
 
             <div className="flex gap-1">
               {[
-                { label: "All Alerts", count: 37, active: true },
-                { label: "High", count: 12, color: "text-red-600" },
-                { label: "Medium", count: 18, color: "text-orange-600" },
-                { label: "Low", count: 7, color: "text-blue-600" },
-                { label: "Resolved", count: 0 },
+                { label: "All Alerts", count: alerts.length, active: true },
+                { label: "High", count: alerts.filter(x => x.severity === "High").length, color: "text-red-600" },
+                { label: "Medium", count: alerts.filter(x => x.severity === "Medium").length, color: "text-orange-600" },
+                { label: "Low", count: alerts.filter(x => x.severity === "Low").length, color: "text-blue-600" },
+                { label: "Resolved", count: alerts.filter(x => x.status === "Resolved").length },
               ].map((t) => (
                 <button
                   key={t.label}

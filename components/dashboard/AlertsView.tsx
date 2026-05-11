@@ -132,7 +132,11 @@ export default function AlertsView() {
                 </h1>
                 <p className="text-sm text-gray-400">Early Warning System to detect and flag abnormal or risky activities.</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-2.5 py-1 bg-gray-50 text-gray-400 rounded-full text-[10px] font-bold border border-gray-200/50">
+                  <div className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-pulse"></div>
+                  AI AGENT PLUGIN — EMPTY
+                </div>
                 <button 
                   onClick={runScan}
                   disabled={isScanning}

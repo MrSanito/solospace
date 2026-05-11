@@ -128,7 +128,6 @@ export default function GlobalNavbar({ isLead, leadData, activeTab, onTabChange 
           {/* Notifications */}
           <button className="relative p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all">
             <Bell size={18} />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
           </button>
 
           {/* Vertical Divider */}

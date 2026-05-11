@@ -73,7 +73,11 @@ export default function AlertsPage() {
                 </h1>
                 <p className="text-sm text-gray-400">Early Warning System to detect and flag abnormal or risky activities.</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-2.5 py-1 bg-gray-50 text-gray-400 rounded-full text-[10px] font-bold border border-gray-200/50">
+                  <div className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-pulse"></div>
+                  AI AGENT PLUGIN — EMPTY
+                </div>
                 <button className="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 transition-colors">
                   <Settings size={12} /> Configure Rules
                 </button>
@@ -85,11 +89,11 @@ export default function AlertsPage() {
 
             <div className="flex gap-1">
               {[
-                { label: "All Alerts", count: 37, active: true },
-                { label: "High", count: 12, color: "text-red-600" },
-                { label: "Medium", count: 18, color: "text-orange-600" },
-                { label: "Low", count: 7, color: "text-blue-600" },
-                { label: "Resolved", count: 0 },
+                { label: "All Alerts", count: alerts.length, active: true },
+                { label: "High", count: alerts.filter(x => x.severity === "High").length, color: "text-red-600" },
+                { label: "Medium", count: alerts.filter(x => x.severity === "Medium").length, color: "text-orange-600" },
+                { label: "Low", count: alerts.filter(x => x.severity === "Low").length, color: "text-blue-600" },
+                { label: "Resolved", count: alerts.filter(x => x.status === "RESOLVED").length },
               ].map((t) => (
                 <button
                   key={t.label}

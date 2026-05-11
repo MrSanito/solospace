@@ -1015,8 +1015,9 @@ export default function ChatOversightPage({ initialThreadId, onBack }: ChatOvers
                       type="text"
                       placeholder="ENTER ACCESS CODE"
                       value={unlockKey}
-                      onChange={e => setUnlockKey(e.target.value.toUpperCase())}
-                      className="input input-bordered w-full pl-12 h-14 bg-gray-50 font-mono text-center tracking-[0.3em] font-bold text-lg rounded-2xl border-gray-100 focus:border-blue-400 transition-all uppercase"
+                      onChange={e => setUnlockKey(e.target.value)}
+                      maxLength={12}
+                      className="input input-bordered w-full pl-12 h-14 bg-gray-50 font-mono text-center tracking-[0.3em] font-bold text-lg rounded-2xl border-gray-100 focus:border-blue-400 transition-all"
                     />
                   </div>
                   <div className="flex gap-3">

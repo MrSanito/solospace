@@ -43,7 +43,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
-    if (file.accessKey === accessKey.toUpperCase()) {
+    if (file.accessKey === accessKey) {
       const decoded = jwt.verify(token, JWT_SECRET) as any;
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },

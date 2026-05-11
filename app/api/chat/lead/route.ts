@@ -112,7 +112,7 @@ export async function GET() {
       participants: participants,
       sharedFiles: allFiles,
       messages: thread.messages
-        .filter(m => !m.receiverId || m.receiverId === lead.leadId) // Only show messages for this lead
+        .filter(m => m.senderId === lead.leadId || m.receiverId === lead.leadId || !m.receiverId) // Show messages sent by or received by this lead
         .map(m => {
           const isUser = m.senderType === "USER";
           const sender = isUser ? participants.find(p => p.id === m.senderId) : null;

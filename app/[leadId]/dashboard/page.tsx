@@ -85,29 +85,49 @@ export default function LeadDashboard() {
     if (!newMessage.trim() && (!attachments || attachments.length === 0)) return;
     if (loading) return;
 
+    const messageContent = newMessage;
+    setNewMessage(""); // Clear input immediately for better UX
+    
+    // Optimistic Update
+    if (thread) {
+      const optimisticMessage = {
+        id: `temp-${Date.now()}`,
+        content: messageContent,
+        senderType: "LEAD",
+        senderId: leadData?.id,
+        createdAt: new Date().toISOString(),
+        attachments: attachments || []
+      };
+      setThread({
+        ...thread,
+        messages: [...(thread.messages || []), optimisticMessage]
+      });
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/chat/lead", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-            content: newMessage,
+            content: messageContent,
             attachments: attachments || []
         }),
       });
 
       if (res.ok) {
-        setNewMessage("");
-        fetchChat();
+        fetchChat(); // Refresh to get the real message with DB ID
         if (attachments && attachments.length > 0) {
             toast.success("Attachment sent");
         }
       } else {
         toast.error("Failed to send message");
+        fetchChat(); // Rollback on error by fetching fresh state
       }
     } catch (e) {
       console.error("Failed to send message");
       toast.error("Error sending message");
+      fetchChat(); // Rollback on error
     } finally {
       setLoading(false);
     }

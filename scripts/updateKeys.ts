@@ -12,14 +12,13 @@ export function generateAccessKey(length: number = 12): string {
 }
 
 async function main() {
-  console.log('Starting key update process...');
+  console.log('Starting key update process for ALL files...');
 
   // Update NoteAttachments
-  const noteAttachments = await prisma.noteAttachment.findMany({
-    where: { accessKey: { not: null } },
-  });
-  console.log(`Found ${noteAttachments.length} NoteAttachments to update.`);
+  const noteAttachments = await prisma.noteAttachment.findMany();
+  console.log(`Found ${noteAttachments.length} NoteAttachments.`);
   for (const attachment of noteAttachments) {
+    console.log(`Updating NoteAttachment [${attachment.id}]: ${attachment.fileName}`);
     await prisma.noteAttachment.update({
       where: { id: attachment.id },
       data: { accessKey: generateAccessKey() },
@@ -28,11 +27,10 @@ async function main() {
   console.log('Finished updating NoteAttachments.');
 
   // Update ChatMessageAttachments
-  const chatMessageAttachments = await prisma.chatMessageAttachment.findMany({
-    where: { accessKey: { not: null } },
-  });
-  console.log(`Found ${chatMessageAttachments.length} ChatMessageAttachments to update.`);
+  const chatMessageAttachments = await prisma.chatMessageAttachment.findMany();
+  console.log(`Found ${chatMessageAttachments.length} ChatMessageAttachments.`);
   for (const attachment of chatMessageAttachments) {
+    console.log(`Updating ChatMessageAttachment [${attachment.id}]: ${attachment.fileName}`);
     await prisma.chatMessageAttachment.update({
       where: { id: attachment.id },
       data: { accessKey: generateAccessKey() },
@@ -41,11 +39,10 @@ async function main() {
   console.log('Finished updating ChatMessageAttachments.');
 
   // Update DriveFiles
-  const driveFiles = await prisma.driveFile.findMany({
-    where: { accessKey: { not: null } },
-  });
-  console.log(`Found ${driveFiles.length} DriveFiles to update.`);
+  const driveFiles = await prisma.driveFile.findMany();
+  console.log(`Found ${driveFiles.length} DriveFiles.`);
   for (const file of driveFiles) {
+    console.log(`Updating DriveFile [${file.id}]: ${file.name}`);
     await prisma.driveFile.update({
       where: { id: file.id },
       data: { accessKey: generateAccessKey() },

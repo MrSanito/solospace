@@ -43,13 +43,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
-    if (file.accessKey === accessKey) {
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
-      const user = await prisma.user.findUnique({
-        where: { id: decoded.userId },
-        select: { organizationId: true, name: true }
-      });
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: { id: true, organizationId: true, name: true }
+    });
 
+    if (file.accessKey === accessKey) {
       if (user) {
         const note = JSON.stringify({
           message: `Unlocked file: ${file.name || file.fileName}`,
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
         await createAuditLog({
           organizationId: user.organizationId,
           actorType: "USER",
-          actorId: decoded.userId,
+          actorId: user.id,
           actorName: user.name,
           action: "DECRYPT",
           note,
@@ -69,11 +69,27 @@ export async function POST(req: Request) {
 
         // EWS Check: File Access Spike
         const { checkFileAccessSpike } = await import("@/lib/ews");
-        await checkFileAccessSpike(decoded.userId, user.organizationId, note, ip, userAgent);
+        await checkFileAccessSpike(user.id, user.organizationId, note, ip, userAgent);
       }
 
       return NextResponse.json({ url: file.fileUrl });
     } else {
+      if (user) {
+        await createAuditLog({
+          organizationId: user.organizationId,
+          actorType: "USER",
+          actorId: user.id,
+          actorName: user.name,
+          action: "DECRYPT_FAILED",
+          note: JSON.stringify({
+            message: `FAILED unlock attempt for file: ${file.name || file.fileName}`,
+            enteredKey: accessKey,
+            device: userAgent,
+            ip: ip
+          }),
+          source: "UI"
+        });
+      }
       return NextResponse.json({ error: "Invalid access key" }, { status: 403 });
     }
   } catch (error) {

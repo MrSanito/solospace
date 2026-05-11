@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { createAuditLog } from "@/lib/audit";
-import { encrypt, decrypt } from "@/lib/encryption";
+import { encrypt, decrypt, generateAccessKey } from "@/lib/encryption";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-me";
 
@@ -110,7 +110,7 @@ export async function POST(req: Request) {
                 fileUrl: att.fileUrl,
                 fileType: att.fileType,
                 fileSize: att.fileSize,
-                accessKey: Math.random().toString(36).substring(2, 8).toUpperCase(),
+                accessKey: generateAccessKey(),
                 isRestricted: true
             }))
         }

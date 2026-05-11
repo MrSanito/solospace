@@ -67,13 +67,20 @@ export default function ChatWindow({ leadId, userId, senderType }: ChatWindowPro
 
   useEffect(() => {
     if (!leadId) return;
-    fetch(`/api/chat?leadId=${leadId}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data?.messages) setMessages(data.messages);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+
+    const loadMessages = () => {
+      fetch(`/api/chat?leadId=${leadId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data?.messages) setMessages(data.messages);
+          setLoading(false);
+        })
+        .catch(() => setLoading(false));
+    };
+
+    loadMessages();
+    const interval = setInterval(loadMessages, 3000);
+    return () => clearInterval(interval);
   }, [leadId]);
 
   useEffect(() => {

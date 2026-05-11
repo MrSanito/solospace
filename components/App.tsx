@@ -39,7 +39,7 @@ function Sidebar({ page, setPage }: { page: Page; setPage: (p: Page) => void }) 
     { id: "chat" as Page, icon: MessageSquare, label: "Chat Oversight" },
     { id: null, icon: HardDrive, label: "Drive" },
     { id: null, icon: FileText, label: "Audit Log" },
-    { id: "alerts" as Page, icon: Bell, label: "Alerts", badge: 8 },
+    { id: "alerts" as Page, icon: Bell, label: "Alerts" },
     { id: null, icon: Zap, label: "Automations" },
     { id: null, icon: Link2, label: "Integrations" },
     { id: "storage" as Page, icon: Cloud, label: "Storage" },
@@ -746,7 +746,7 @@ function AlertsPage() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-gray-50">
-      <TopBar alertCount={12} />
+      <TopBar />
 
       <div className="flex flex-1 min-h-0">
         <div className="flex-1 flex flex-col min-w-0">

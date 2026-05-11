@@ -26,6 +26,7 @@ export default function AlertsPage() {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAlert, setSelectedAlert] = useState(0);
+  const [filter, setFilter] = useState("All Alerts");
 
   useEffect(() => {
     fetchAlerts();
@@ -58,7 +59,14 @@ export default function AlertsPage() {
     Resolved: "bg-green-100 text-green-700",
   }[s] ?? "");
 
-  const a = alerts[selectedAlert];
+  const filteredAlerts = alerts.filter(a => {
+    if (filter === "All Alerts") return true;
+    if (filter === "High" || filter === "Medium" || filter === "Low") return a.severity === filter;
+    if (filter === "Resolved") return a.status === "RESOLVED";
+    return true;
+  });
+
+  const a = filteredAlerts[selectedAlert];
 
   return (
     <PermissionGuard permission={PermissionKey.AUDIT_LOGS}>
@@ -89,7 +97,7 @@ export default function AlertsPage() {
 
             <div className="flex gap-1">
               {[
-                { label: "All Alerts", count: alerts.length, active: true },
+                { label: "All Alerts", count: alerts.length },
                 { label: "High", count: alerts.filter(x => x.severity === "High").length, color: "text-red-600" },
                 { label: "Medium", count: alerts.filter(x => x.severity === "Medium").length, color: "text-orange-600" },
                 { label: "Low", count: alerts.filter(x => x.severity === "Low").length, color: "text-blue-600" },
@@ -97,9 +105,13 @@ export default function AlertsPage() {
               ].map((t) => (
                 <button
                   key={t.label}
-                  className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors ${t.active ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-100"}`}
+                  onClick={() => {
+                    setFilter(t.label);
+                    setSelectedAlert(0);
+                  }}
+                  className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors ${filter === t.label ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-100"}`}
                 >
-                  {t.label} {t.count > 0 && <span className={`ml-1 ${t.active ? "text-blue-200" : t.color}`}>{t.count}</span>}
+                  {t.label} {t.count > 0 && <span className={`ml-1 ${filter === t.label ? "text-blue-200" : t.color}`}>{t.count}</span>}
                 </button>
               ))}
             </div>
@@ -139,19 +151,18 @@ export default function AlertsPage() {
                       <span className="loading loading-spinner loading-md text-blue-600" />
                     </td>
                   </tr>
-                ) : alerts.length === 0 ? (
+                ) : filteredAlerts.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="text-center py-12 text-gray-500">
                       No security alerts found.
                     </td>
                   </tr>
                 ) : (
-                  alerts.map((row, i) => (
+                  filteredAlerts.map((row, i) => (
                     <motion.tr
                       key={row.id || i}
-                      initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
                       onClick={() => setSelectedAlert(i)}
                       className={`border-b border-gray-100 cursor-pointer transition-colors ${selectedAlert === i ? "bg-blue-50" : "hover:bg-gray-50"}`}
                     >
@@ -190,7 +201,7 @@ export default function AlertsPage() {
             </table>
 
             <div className="flex items-center justify-between p-4 bg-white border-t border-gray-100">
-              <p className="text-xs text-gray-400">Showing 1 to 8 of 37 alerts</p>
+              <p className="text-xs text-gray-400">Showing {alerts.length > 0 ? "1" : "0"} to {alerts.length} of {alerts.length} alerts</p>
               <div className="flex items-center gap-1">
                 <button className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100"><ChevronLeft size={14} /></button>
                 {[1,2,3,4,5].map(n => (
@@ -205,9 +216,9 @@ export default function AlertsPage() {
           {/* Alert summary bar */}
           <div className="bg-[#0d1117] px-6 py-3 flex items-center gap-6 text-xs shrink-0">
             <p className="text-gray-400 font-semibold">Alert Summary</p>
-            <span className="font-bold text-red-400">12 High</span>
-            <span className="font-bold text-orange-400">18 Medium</span>
-            <span className="font-bold text-blue-400">7 Low</span>
+            <span className="font-bold text-red-400">{alerts.filter(x => x.severity === "High").length} High</span>
+            <span className="font-bold text-orange-400">{alerts.filter(x => x.severity === "Medium").length} Medium</span>
+            <span className="font-bold text-blue-400">{alerts.filter(x => x.severity === "Low").length} Low</span>
             <button className="ml-auto text-blue-400 hover:underline">View all alerts →</button>
           </div>
         </div>

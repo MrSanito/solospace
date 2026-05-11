@@ -118,7 +118,16 @@ export default function AlertsView() {
     Resolved: "bg-green-100 text-green-700",
   }[s] as string ?? "");
 
-  const a = alerts[selectedAlertIdx];
+  const [filter, setFilter] = useState("All Alerts");
+
+  const filteredAlerts = alerts.filter(a => {
+    if (filter === "All Alerts") return true;
+    if (filter === "High" || filter === "Medium" || filter === "Low") return a.severity === filter;
+    if (filter === "Resolved") return a.status === "Resolved";
+    return true;
+  });
+
+  const a = filteredAlerts[selectedAlertIdx];
 
   return (
     <div className="flex flex-1 min-h-0 bg-gray-50 overflow-hidden">
@@ -149,7 +158,7 @@ export default function AlertsView() {
 
             <div className="flex gap-1 overflow-x-auto pb-1">
               {[
-                { label: "All Alerts", count: alerts.length, active: true },
+                { label: "All Alerts", count: alerts.length },
                 { label: "High", count: alerts.filter(x => x.severity === "High").length, color: "text-red-600" },
                 { label: "Medium", count: alerts.filter(x => x.severity === "Medium").length, color: "text-orange-600" },
                 { label: "Low", count: alerts.filter(x => x.severity === "Low").length, color: "text-blue-600" },
@@ -157,9 +166,13 @@ export default function AlertsView() {
               ].map((t) => (
                 <button
                   key={t.label}
-                  className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap ${t.active ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-100"}`}
+                  onClick={() => {
+                    setFilter(t.label);
+                    setSelectedAlertIdx(0);
+                  }}
+                  className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap ${filter === t.label ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-100"}`}
                 >
-                  {t.label} {t.count > 0 && <span className={`ml-1 ${t.active ? "text-blue-200" : t.color}`}>{t.count}</span>}
+                  {t.label} {t.count > 0 && <span className={`ml-1 ${filter === t.label ? "text-blue-200" : t.color}`}>{t.count}</span>}
                 </button>
               ))}
             </div>
@@ -195,12 +208,11 @@ export default function AlertsView() {
                 </tr>
               </thead>
               <tbody>
-                {alerts.map((row, i) => (
+                {filteredAlerts.map((row, i) => (
                   <motion.tr
                     key={row.id}
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     onClick={() => setSelectedAlertIdx(i)}
                     className={`border-b border-gray-100 cursor-pointer transition-colors ${selectedAlertIdx === i ? "bg-blue-50" : "hover:bg-gray-50"}`}
                   >

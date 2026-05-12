@@ -62,9 +62,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
+    const role = user?.role;
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
-    router.push("/login");
+    
+    if (role === "CEO" || role === "ORG_ADMIN" || role === "MANAGER") {
+      router.push("/supervisor/login");
+    } else if (role === "SALES_REP") {
+      router.push("/employee/login");
+    } else {
+      router.push("/login");
+    }
   };
 
   return (

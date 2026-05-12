@@ -541,6 +541,19 @@ export default function LoginPage() {
                   </svg>
                   Login with Mobile instead
                 </motion.button>
+                {/* Staff Login Link */}
+                <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+                  <p className="text-xs text-gray-400 mb-2">Are you a staff member?</p>
+                  <div className="flex justify-center gap-4">
+                    <a href="/employee/login" className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
+                      Employee Login
+                    </a>
+                    <span className="text-gray-300">|</span>
+                    <a href="/supervisor/login" className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
+                      Supervisor Login
+                    </a>
+                  </div>
+                </div>
               </form>
             </motion.div>
           )}

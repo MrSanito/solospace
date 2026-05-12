@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Filter, ChevronDown, Download, Eye, MoreVertical, ChevronRight, XCircle, Edit, Trash2 } from "lucide-react";
+import { Search, Filter, ChevronDown, Download, Eye, MoreVertical, ChevronRight, XCircle, Edit, Trash2, MessageCircle } from "lucide-react";
 import * as XLSX from "xlsx";
 import BulkUpdateModal from "./BulkUpdateModal";
 import BulkDeleteModal from "./BulkDeleteModal";
@@ -15,6 +15,8 @@ const STAGE_STYLES: Record<string, string> = {
   NEGOTIATION: "bg-amber-50 text-amber-700",
   COLD: "bg-slate-50 text-slate-600",
   CHATTING: "bg-green-50 text-green-700",
+  WON: "bg-emerald-100 text-emerald-800 font-bold",
+  CUSTOMER: "bg-gold-50 text-amber-900 font-bold border border-amber-200",
 };
 
 const STAGE_LABEL: Record<string, string> = {
@@ -25,6 +27,8 @@ const STAGE_LABEL: Record<string, string> = {
   NEGOTIATION: "Negotiation",
   COLD: "Cold Chatting", 
   CHATTING: "Cold Chatting",
+  WON: "Closed Won",
+  CUSTOMER: "Customer",
 };
 
 const PRIORITY_STYLES: Record<string, string> = {
@@ -76,12 +80,16 @@ interface DbLead {
 
 interface LeadsTableProps {
   onLeadClick: (id: string, allIds?: string[]) => void;
+  onChatClick?: (id: string, allIds?: string[]) => void;
   activeNav: string;
   refreshKey?: number;
   sidebarFilter?: { id: string; status: string | null; subStatus: string | null; dealSizeMin: string | null; dealSizeMax: string | null; industry: string | null; alphabet: string | null; name: string } | null;
+  externalSearchQuery?: string;
+  externalStageFilter?: string | null;
+  externalOwnerFilter?: string | null;
 }
 
-export default function LeadsTable({ onLeadClick, activeNav, refreshKey = 0, sidebarFilter }: LeadsTableProps) {
+export default function LeadsTable({ onLeadClick, onChatClick, activeNav, refreshKey = 0, sidebarFilter, externalSearchQuery, externalStageFilter, externalOwnerFilter }: LeadsTableProps) {
   const router = useRouter();
   const [leads, setLeads] = useState<DbLead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -202,34 +210,28 @@ export default function LeadsTable({ onLeadClick, activeNav, refreshKey = 0, sid
   // Processing Leads (Filter -> Sort -> Paginate)
   let processedLeads = [...leads];
 
-  // 0. Search Filter & Dropdown Logic
-  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
-  const searchResults = searchQuery.length >= 2 ? leads.filter(l => {
-    const q = searchQuery.toLowerCase();
-    return (
-      l.id.toLowerCase().includes(q) ||
-      l.contactName.toLowerCase().includes(q) || 
-      l.company.toLowerCase().includes(q) ||
-      l.phone?.toLowerCase().includes(q) ||
-      l.email?.toLowerCase().includes(q) ||
-      l.industry?.toLowerCase().includes(q) ||
-      l.requirement?.toLowerCase().includes(q) ||
-      l.owner?.name.toLowerCase().includes(q)
-    );
-  }).slice(0, 8) : [];
-
-  if (searchQuery) {
-    const q = searchQuery.toLowerCase();
+  // 0. Search Filter logic
+  const effectiveSearchQuery = (externalSearchQuery || searchQuery).toLowerCase();
+  
+  if (effectiveSearchQuery) {
     processedLeads = processedLeads.filter(l => 
-      l.id.toLowerCase().includes(q) ||
-      l.contactName.toLowerCase().includes(q) || 
-      l.company.toLowerCase().includes(q) ||
-      l.phone?.toLowerCase().includes(q) ||
-      l.email?.toLowerCase().includes(q) ||
-      l.industry?.toLowerCase().includes(q) ||
-      l.requirement?.toLowerCase().includes(q) ||
-      l.owner?.name.toLowerCase().includes(q)
+      l.id.toLowerCase().includes(effectiveSearchQuery) ||
+      l.contactName.toLowerCase().includes(effectiveSearchQuery) || 
+      l.company.toLowerCase().includes(effectiveSearchQuery) ||
+      l.phone?.toLowerCase().includes(effectiveSearchQuery) ||
+      l.email?.toLowerCase().includes(effectiveSearchQuery) ||
+      l.industry?.toLowerCase().includes(effectiveSearchQuery) ||
+      l.requirement?.toLowerCase().includes(effectiveSearchQuery) ||
+      l.owner?.name.toLowerCase().includes(effectiveSearchQuery)
     );
+  }
+
+  // 0.5 External Stage & Owner Filters
+  if (externalStageFilter) {
+    processedLeads = processedLeads.filter(l => l.stage === externalStageFilter);
+  }
+  if (externalOwnerFilter) {
+    processedLeads = processedLeads.filter(l => (l as any).ownerId === externalOwnerFilter);
   }
 
   // 1. Navigation Filters
@@ -401,76 +403,7 @@ export default function LeadsTable({ onLeadClick, activeNav, refreshKey = 0, sid
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-2 flex-1 sm:flex-none">
-            <div className="relative flex-1 sm:flex-none">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-              <input 
-                type="text" 
-                placeholder="Search leads, company..."
-                value={searchQuery}
-                onFocus={() => setShowSearchDropdown(true)}
-                onChange={(e) => { 
-                  setSearchQuery(e.target.value); 
-                  setCurrentPage(1);
-                  setShowSearchDropdown(true);
-                }}
-                className="w-full sm:w-60 pl-10 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-blue-500/5 transition-all"
-              />
-              
-              {/* Search Results Dropdown */}
-              {showSearchDropdown && searchResults.length > 0 && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-[65]" 
-                    onClick={() => setShowSearchDropdown(false)}
-                  />
-                  <div className="absolute left-0 top-full mt-2 w-full sm:w-80 bg-white border border-slate-200 rounded-2xl shadow-2xl z-[70] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                    <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quick Results</span>
-                      <span className="text-[9px] font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-md">{searchResults.length} found</span>
-                    </div>
-                    <div className="max-h-[320px] overflow-y-auto py-1">
-                      {searchResults.map((result) => (
-                        <button
-                          key={result.id}
-                          onClick={() => {
-                            onLeadClick(result.id, leads.map(l => l.id));
-                            setShowSearchDropdown(false);
-                            setSearchQuery("");
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors group text-left border-b border-slate-50 last:border-0"
-                        >
-                          <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-[10px] font-black text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                            {result.contactName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <p className="text-[12px] font-bold text-slate-900 truncate group-hover:text-blue-600 transition-colors">
-                                {result.contactName}
-                              </p>
-                              <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${STAGE_STYLES[result.stage]}`}>
-                                {STAGE_LABEL[result.stage] || result.stage}
-                              </span>
-                            </div>
-                            <p className="text-[10px] text-slate-500 truncate mt-0.5">
-                              {result.company} • {result.owner?.name}
-                            </p>
-                          </div>
-                          <ChevronRight size={14} className="text-slate-300 group-hover:text-blue-500 transition-transform group-hover:translate-x-0.5" />
-                        </button>
-                      ))}
-                    </div>
-                    <div className="p-2 bg-slate-50 border-t border-slate-100">
-                      <button 
-                        onClick={() => setShowSearchDropdown(false)}
-                        className="w-full py-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors"
-                      >
-                        Close Results
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
+            {/* Removed internal search input as it is now in the parent LeadsPage */}
 
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Show</span>
@@ -764,7 +697,14 @@ export default function LeadsTable({ onLeadClick, activeNav, refreshKey = 0, sid
                   <div className={`w-2 h-2 rounded-full mx-auto ${lead.priority === "HIGH" ? "bg-red-500" : lead.priority === "MEDIUM" ? "bg-amber-500" : "bg-green-500"}`} />
                 </td>
                 <td className="px-3 sm:px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-center justify-end">
+                  <div className="flex items-center justify-end gap-1">
+                    <button
+                      onClick={() => onChatClick ? onChatClick(lead.id, displayedLeads.map(l => l.id)) : onLeadClick(lead.id, displayedLeads.map(l => l.id))}
+                      className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-all active:scale-90"
+                      title="Start Chat"
+                    >
+                      <MessageCircle size={16} />
+                    </button>
                     <div className="relative">
                       <button
                         onClick={() => setActiveLeadMenu(activeLeadMenu === lead.id ? null : lead.id)}

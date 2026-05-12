@@ -22,10 +22,14 @@ export default function LoginPage() {
   const [phone, setPhone]           = useState("");
   const [countryCode, setCountryCode] = useState("+91");
   const [email, setEmail]           = useState("");
+  const [name, setName]             = useState("");
   const [password, setPassword]     = useState("");
   const [showPass, setShowPass]     = useState(false);
   const [loadingOtp, setLoadingOtp] = useState(false);
   const [loadingEmail, setLoadingEmail] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
   const { login, user, loading: authLoading }  = useAuth();
   const router     = useRouter();
 
@@ -79,24 +83,54 @@ export default function LoginPage() {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoadingEmail(true);
+    setFormError(null);
     try {
-      const res = await fetch("/api/auth/lead/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        toast.success("Welcome to your portal!");
-        localStorage.setItem("lead_info", JSON.stringify(data.lead));
-        // Standardized dynamic routing: /{leadId}/dashboard
-        router.push(`/${data.lead.id}/dashboard`); 
+      if (otpSent) {
+        // Step 2: Verify OTP
+        const res = await fetch("/api/auth/email-login/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, otp }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          toast.success("Welcome back!");
+          if (data.lead) {
+            localStorage.setItem("lead_info", JSON.stringify(data.lead));
+          }
+          router.push(data.redirect);
+        } else {
+          setFormError(data.error || "Invalid OTP");
+          toast.error(data.error || "Invalid OTP");
+        }
       } else {
-        toast.error(data.error || "Access Denied");
+        // Step 1: Request Login / Send OTP
+        const res = await fetch("/api/auth/email-login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, name }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          if (data.redirect) {
+            // vishal@gmail.com bypass
+            toast.success("Welcome back, Vishal!");
+            if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
+            if (data.lead) localStorage.setItem("lead_info", JSON.stringify(data.lead));
+            router.push(data.redirect);
+          } else if (data.otpSent) {
+            setOtpSent(true);
+            toast.success("OTP sent to your email!");
+          }
+        } else {
+          setFormError(data.error || "Access Denied");
+          toast.error(data.error || "Access Denied");
+        }
       }
     } catch {
+      setFormError("Connection synchronization failed");
       toast.error("Connection synchronization failed");
     } finally {
       setLoadingEmail(false);
@@ -215,6 +249,23 @@ export default function LoginPage() {
             </button>
           ))}
         </motion.div>
+
+        {/* Inline Error Message */}
+        <AnimatePresence>
+          {formError && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+              animate={{ opacity: 1, height: "auto", marginBottom: 20 }}
+              exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+              className="bg-red-50 border border-red-100 rounded-xl p-3 flex items-start gap-3 overflow-hidden"
+            >
+              <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <p className="text-sm font-medium text-red-600 leading-tight">{formError}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Tab Content */}
         <AnimatePresence mode="wait">
@@ -351,6 +402,34 @@ export default function LoginPage() {
               transition={{ duration: 0.22 }}
             >
               <form onSubmit={handleEmailLogin} className="space-y-4">
+                {/* Name field */}
+                {!otpSent && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Full Name
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-indigo-400">
+                        <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </span>
+                      <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Enter your name as in CRM"
+                        required
+                        className="w-full pl-10 pr-4 py-3 rounded-xl text-sm text-gray-700 placeholder-gray-300 outline-none transition-all"
+                        style={{ border: "1.5px solid #e5e7eb", background: "white" }}
+                        onFocus={e => { e.currentTarget.style.border = "1.5px solid #6366f1"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.1)"; }}
+                        onBlur={e  => { e.currentTarget.style.border = "1.5px solid #e5e7eb"; e.currentTarget.style.boxShadow = "none"; }}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {/* Email field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -377,49 +456,43 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {/* Password field */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-indigo-400">
-                      <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6}
-                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      </svg>
-                    </span>
-                    <input
-                      type={showPass ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter your password"
-                      required
-                      className="w-full pl-10 pr-11 py-3 rounded-xl text-sm text-gray-700 placeholder-gray-300 outline-none transition-all"
-                      style={{ border: "1.5px solid #e5e7eb", background: "white" }}
-                      onFocus={e => { e.currentTarget.style.border = "1.5px solid #6366f1"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.1)"; }}
-                      onBlur={e  => { e.currentTarget.style.border = "1.5px solid #e5e7eb"; e.currentTarget.style.boxShadow = "none"; }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPass(!showPass)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      {showPass ? (
+                {/* OTP field (only if sent) */}
+                {otpSent && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    className="space-y-1.5"
+                  >
+                    <label className="block text-sm font-medium text-gray-700">
+                      Enter OTP
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-indigo-400">
                         <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6}
-                            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                         </svg>
-                      ) : (
-                        <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6}
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-                </div>
+                      </span>
+                      <input
+                        type="text"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                        placeholder="6-digit OTP"
+                        maxLength={6}
+                        required
+                        className="w-full pl-10 pr-4 py-3 rounded-xl text-sm text-gray-700 placeholder-gray-300 outline-none transition-all"
+                        style={{ border: "1.5px solid #e5e7eb", background: "white" }}
+                        onFocus={e => { e.currentTarget.style.border = "1.5px solid #6366f1"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.1)"; }}
+                        onBlur={e  => { e.currentTarget.style.border = "1.5px solid #e5e7eb"; e.currentTarget.style.boxShadow = "none"; }}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Password field - Only show if OTP not sent and not vishal (optional logic) */}
+                {/* For now, we'll follow the user's logic: Leads use OTP. Vishal skips OTP. */}
+                {/* So if not OTP sent, we just show email input. */}
+
 
                 {/* Login button */}
                 <motion.button
@@ -441,10 +514,10 @@ export default function LoginPage() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                       </svg>
-                      Signing in...
+                      {otpSent ? "Verifying..." : "Signing in..."}
                     </>
                   ) : (
-                    "Login"
+                    otpSent ? "Verify & Login" : "Continue"
                   )}
                 </motion.button>
 

@@ -13,6 +13,11 @@ export default function LeadsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [leadIds, setLeadIds] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [stageFilter, setStageFilter] = useState("All Stages");
+  const [ownerFilter, setOwnerFilter] = useState("All Owners");
+  const [team, setTeam] = useState<any[]>([]);
+  const [initialModalTab, setInitialModalTab] = useState<string | null>(null);
   const { user } = useAuth();
   const searchParams = useSearchParams();
 
@@ -20,6 +25,15 @@ export default function LeadsPage() {
     const leadId = searchParams.get("id");
     if (leadId) setSelectedLeadId(leadId);
   }, [searchParams]);
+
+  useEffect(() => {
+    fetch("/api/team")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setTeam(data);
+      })
+      .catch(err => console.error("Failed to fetch team:", err));
+  }, []);
 
   const switchLead = (dir: "next" | "prev") => {
     if (!selectedLeadId || leadIds.length === 0) return;
@@ -32,7 +46,7 @@ export default function LeadsPage() {
 
   // Only CEO and Manager can add leads based on previous instructions, 
   // but let's check if the user is authorized.
-  const canAddLead = user?.role === "CEO" || user?.role === "MANAGER";
+  const canAddLead = user?.role === "CEO" || user?.role === "MANAGER" || user?.role === "ORG_ADMIN";
 
   const handleExportCSV = async () => {
     try {
@@ -62,6 +76,13 @@ export default function LeadsPage() {
   };
 
   const handleLeadClick = (id: string, allIds?: string[]) => {
+    setInitialModalTab(null);
+    setSelectedLeadId(id);
+    if (allIds) setLeadIds(allIds);
+  };
+
+  const handleChatClick = (id: string, allIds?: string[]) => {
+    setInitialModalTab("chat");
     setSelectedLeadId(id);
     if (allIds) setLeadIds(allIds);
   };
@@ -102,35 +123,56 @@ export default function LeadsPage() {
           <input 
             type="text" 
             placeholder="Search leads by name, email, or company..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
           />
         </div>
-        <select className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+        <select 
+          value={stageFilter}
+          onChange={(e) => setStageFilter(e.target.value)}
+          className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+        >
           <option>All Stages</option>
-          <option>New</option>
-          <option>Contacted</option>
-          <option>Qualified</option>
-          <option>Proposal Sent</option>
-          <option>Negotiation</option>
-          <option>Won</option>
-          <option>Lost</option>
+          <option value="NEW">New</option>
+          <option value="CONTACTED">Contacted</option>
+          <option value="CHATTING">Cold Chatting</option>
+          <option value="MEETING_SET">Meeting Set</option>
+          <option value="NEGOTIATION">Negotiation</option>
+          <option value="WON">Closed Won</option>
+          <option value="CUSTOMER">Customer</option>
+          <option value="NOT_INTERESTED">Not Interested</option>
         </select>
-        <select className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+        <select 
+          value={ownerFilter}
+          onChange={(e) => setOwnerFilter(e.target.value)}
+          className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+        >
           <option>All Owners</option>
-          {/* We could fetch owners here, but for now just placeholder */}
+          {team.map(member => (
+            <option key={member.id} value={member.id}>{member.name}</option>
+          ))}
         </select>
       </div>
 
       <LeadsTable 
         refreshKey={refreshKey} 
         onLeadClick={handleLeadClick} 
-        activeNav="Leads" 
+        onChatClick={handleChatClick}
+        activeNav="Leads"
+        externalSearchQuery={searchQuery}
+        externalStageFilter={stageFilter === "All Stages" ? null : stageFilter}
+        externalOwnerFilter={ownerFilter === "All Owners" ? null : ownerFilter}
       />
 
       {selectedLeadId && (
         <LeadDetailModal 
           leadId={selectedLeadId} 
-          onClose={() => setSelectedLeadId(null)} 
+          initialTab={initialModalTab}
+          onClose={() => {
+            setSelectedLeadId(null);
+            setInitialModalTab(null);
+          }} 
           onUpdate={() => setRefreshKey(prev => prev + 1)}
           onSwitch={switchLead}
         />

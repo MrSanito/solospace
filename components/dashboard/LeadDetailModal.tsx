@@ -1,6 +1,6 @@
 "use client"
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, ChevronLeft, ChevronRight, Building2, Phone, Mail, CalendarCheck, ChevronDown, MessageCircle, ShieldAlert, Target, CalendarClock } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthContext";
 import toast from "react-hot-toast";
@@ -54,16 +54,16 @@ export interface DbLead {
   owner: { name: string; initials: string };
   reminders?: any[];
 }
-
 interface LeadDetailModalProps {
   leadId: string;
   onClose: () => void;
   isLoading?: boolean;
   onSwitch?: (dir: "next" | "prev") => void;
   onUpdate?: () => void;
+  initialTab?: string | null;
 }
 
-export default function LeadDetailModal({ leadId, onClose, isLoading, onSwitch, onUpdate }: LeadDetailModalProps) {
+export default function LeadDetailModal({ leadId, onClose, isLoading, onSwitch, onUpdate, initialTab }: LeadDetailModalProps) {
   const router = useRouter();
   const { user } = useAuth();
   const canChangeOwner = user?.role === "ORG_ADMIN" || user?.role === "MANAGER";
@@ -92,6 +92,7 @@ export default function LeadDetailModal({ leadId, onClose, isLoading, onSwitch, 
   const [notes, setNotes] = useState<any[]>([]);
   const [noteInput, setNoteInput] = useState("");
   const [isAddingNote, setIsAddingNote] = useState(false);
+  const chatRef = useRef<HTMLDivElement>(null);
 
   const fetchData = async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -137,6 +138,15 @@ export default function LeadDetailModal({ leadId, onClose, isLoading, onSwitch, 
     if (!leadId) return;
     fetchData();
   }, [leadId, canChangeOwner]);
+
+  // Scroll to chat if initialTab is 'chat'
+  useEffect(() => {
+    if (initialTab === "chat" && !loading && !isLoading && chatRef.current) {
+      setTimeout(() => {
+        chatRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 500);
+    }
+  }, [initialTab, loading, isLoading]);
 
   const handleCompleteFollowup = async (reminderId: string) => {
     try {
@@ -574,7 +584,7 @@ export default function LeadDetailModal({ leadId, onClose, isLoading, onSwitch, 
                 )}
 
                 {/* Chat Section */}
-                <div className="mt-8 space-y-4">
+                <div ref={chatRef} className="mt-8 space-y-4">
                   <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] border-b border-slate-50 pb-2">Direct Communication Protocol</h3>
                   <ChatWindow leadId={leadId} userId={user?.id} senderType="USER" />
                 </div>

@@ -50,7 +50,7 @@ export default function GlobalNavbar({ isLead, leadData, activeTab, onTabChange 
 
   const allNavItems = isLead ? [
     { id: "overview", label: "Overview", icon: LayoutDashboard },
-    { id: "messages", label: "Messages", icon: MessageSquare },
+    { id: "messages", label: "Chat", icon: MessageSquare },
     { id: "documents", label: "Documents", icon: FolderOpen },
   ] : [
     { id: "overview", label: "Overview", href: "/dashboard" },

@@ -31,13 +31,19 @@ export default function DashboardPage() {
   const [isAddChoiceModalOpen, setIsAddChoiceModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isAddEmployeeModalOpen, setIsAddEmployeeModalOpen] = useState(false);
+  const [initialModalTab, setInitialModalTab] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const openLeadModal = (id: string, allIds?: string[]) => {
+  const openLeadModal = (id: string, allIds?: string[], tab: string | null = null) => {
     setSelectedLeadId(id);
     if (allIds) setLeadIds(allIds);
+    setInitialModalTab(tab);
     setIsModalLoading(true);
     setTimeout(() => setIsModalLoading(false), 600);
+  };
+
+  const handleChatClick = (id: string, allIds?: string[]) => {
+    openLeadModal(id, allIds, "chat");
   };
 
   const switchLead = (dir: "next" | "prev") => {
@@ -84,6 +90,7 @@ export default function DashboardPage() {
         <CustomProtocolView 
           filter={sidebarFilter} 
           onLeadClick={(id, allIds) => openLeadModal(id, allIds)}
+          onChatClick={(id, allIds) => handleChatClick(id, allIds)}
           refreshKey={refreshKey}
         />
       ) : (
@@ -101,7 +108,11 @@ export default function DashboardPage() {
         <LeadDetailModal
           leadId={selectedLeadId}
           isLoading={isModalLoading}
-          onClose={() => setSelectedLeadId(null)}
+          initialTab={initialModalTab}
+          onClose={() => {
+            setSelectedLeadId(null);
+            setInitialModalTab(null);
+          }}
           onSwitch={switchLead}
           onUpdate={triggerRefresh}
         />

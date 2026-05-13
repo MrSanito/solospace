@@ -238,7 +238,7 @@ export default function LeadDashboard() {
               className={`flex items-center gap-3 w-full p-3 rounded-xl font-semibold transition-all ${activeTab === "messages" ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
             >
               <MessageSquare size={20} />
-              Messages
+              Chat
             </button>
             <button 
               onClick={() => { setActiveTab("documents"); setIsSidebarOpen(false); }}

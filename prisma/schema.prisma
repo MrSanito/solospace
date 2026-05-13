@@ -41,15 +41,17 @@ model User {
   initials                  String          @db.VarChar(4)
   role                      Role            @default(SALES_REP)
   avatarUrl                 String?
-  department                String?
-  jobTitle                  String?
   organizationId            String
   managerId                 String?
   teamId                    String?
   createdAt                 DateTime        @default(now())
   updatedAt                 DateTime        @updatedAt
   customRoleId              String?
+  department                String?
+  jobTitle                  String?
   googleCalendarSyncEnabled Boolean         @default(false)
+  googleAccessToken         String?
+  googleRefreshToken        String?
   alerts                    Alert[]
   driveFiles                DriveFile[]
   interactions              Interaction[]
@@ -133,8 +135,8 @@ model Lead {
   updatedAt          DateTime           @updatedAt
   requirement        String?
   industry           String?
-  project            String?
   subStatus          LeadSubStatus      @default(BLANK)
+  project            String?
   lastCommunicatedAt DateTime?
   alerts             Alert[]
   auditLogs          AuditLog[]
@@ -211,9 +213,9 @@ model NoteAttachment {
   fileSizeBytes Int
   mimeType      AttachmentMimeType @default(PDF)
   pageCount     Int?
-  isRestricted  Boolean            @default(true)
-  accessKey     String?
   uploadedAt    DateTime           @default(now())
+  accessKey     String?
+  isRestricted  Boolean            @default(true)
   note          Note               @relation(fields: [noteId], references: [id], onDelete: Cascade)
 
   @@index([noteId])
@@ -291,6 +293,22 @@ model ChatMessage {
   @@map("chat_messages")
 }
 
+model ChatMessageAttachment {
+  id           String      @id @default(uuid())
+  messageId    String
+  fileName     String
+  fileUrl      String
+  fileType     String
+  fileSize     Int
+  isRestricted Boolean     @default(true)
+  accessKey    String?
+  createdAt    DateTime    @default(now())
+  message      ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@map("chat_message_attachments")
+}
+
 model AuditLog {
   id             String       @id @default(uuid())
   organizationId String
@@ -327,8 +345,9 @@ model SidebarFilter {
   organizationId String
   createdById    String
   createdAt      DateTime       @default(now())
-  industry       String?
   alphabet       String?
+  industry       String?
+  source         String?
   createdBy      User           @relation("SidebarFilterCreator", fields: [createdById], references: [id])
   organization   Organization   @relation(fields: [organizationId], references: [id])
 
@@ -348,22 +367,6 @@ model LeadPortalAccount {
   lead         Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
   @@map("lead_portal_accounts")
-}
-
-model ChatMessageAttachment {
-  id           String      @id @default(uuid())
-  messageId    String
-  fileName     String
-  fileUrl      String
-  fileType     String
-  fileSize     Int
-  isRestricted Boolean     @default(true)
-  accessKey    String?
-  createdAt    DateTime    @default(now())
-  message      ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
-
-  @@index([messageId])
-  @@map("chat_message_attachments")
 }
 
 model DriveFile {
@@ -463,36 +466,12 @@ model Otp {
   @@map("otps")
 }
 
-enum SenderType {
-  LEAD
-  USER
-}
-
 enum Role {
   MANAGER
   SALES_REP
   ORG_ADMIN
   LEAD
   CEO
-}
-
-enum PermissionKey {
-  VIEW_LEADS
-  MANAGE_LEADS
-  CHAT_ACCESS
-  FILE_VIEW
-  FILE_UPLOAD
-  FILE_DOWNLOAD
-  FILE_DELETE
-  USER_MANAGEMENT
-  ACCESS_CONTROL
-  AUDIT_LOGS
-}
-
-enum DataScopeType {
-  ALL
-  TEAM
-  OWN
 }
 
 enum LeadPriority {
@@ -579,9 +558,33 @@ enum LeadSubStatus {
   BLANK
 }
 
+enum DataScopeType {
+  ALL
+  TEAM
+  OWN
+}
+
 enum EWSStatus {
   NEW
   MONITORING
   INVESTIGATING
   RESOLVED
+}
+
+enum PermissionKey {
+  VIEW_LEADS
+  MANAGE_LEADS
+  CHAT_ACCESS
+  FILE_VIEW
+  FILE_UPLOAD
+  FILE_DOWNLOAD
+  FILE_DELETE
+  USER_MANAGEMENT
+  ACCESS_CONTROL
+  AUDIT_LOGS
+}
+
+enum SenderType {
+  LEAD
+  USER
 }

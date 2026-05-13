@@ -3,7 +3,9 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
   Filter, ChevronDown, Download, Eye, MoreVertical, 
-  ChevronRight, XCircle, Edit, Trash2, Target, Sparkles, Bell, Search
+  ChevronRight, XCircle, Edit, Trash2, Target, Sparkles, Bell, Search,
+  Calendar,
+  MessageCircle
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import BulkUpdateModal from "./BulkUpdateModal";
@@ -87,10 +89,11 @@ interface CustomProtocolViewProps {
     alphabet: string | null;
   };
   onLeadClick: (id: string, allIds?: string[]) => void;
+  onChatClick?: (id: string, allIds?: string[]) => void;
   refreshKey?: number;
 }
 
-export default function CustomProtocolView({ filter, onLeadClick, refreshKey = 0 }: CustomProtocolViewProps) {
+export default function CustomProtocolView({ filter, onLeadClick, onChatClick, refreshKey = 0 }: CustomProtocolViewProps) {
   const router = useRouter();
   const [leads, setLeads] = useState<DbLead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -514,9 +517,26 @@ export default function CustomProtocolView({ filter, onLeadClick, refreshKey = 0
                     <td className="hidden lg:table-cell px-3 py-3 text-slate-500 font-medium truncate">{lead.owner?.name.split(" ")[0] || "—"}</td>
                     <td className="hidden xl:table-cell px-3 py-3 text-slate-900 font-black text-[12px]">{formatValue(lead.dealValueInr)}</td>
                     <td className="px-4 py-3 text-right">
-                      <button className="p-1.5 rounded-lg text-slate-400 hover:bg-white hover:text-slate-900 transition-all">
-                        <MoreVertical size={14} />
-                      </button>
+                      <div className="flex items-center justify-end gap-1">
+                        {onChatClick && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onChatClick(lead.id, processedLeads.map(l => l.id));
+                            }}
+                            className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-all active:scale-90"
+                            title="Start Chat"
+                          >
+                            <MessageCircle size={16} />
+                          </button>
+                        )}
+                        <button 
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-1.5 rounded-lg text-slate-400 hover:bg-white hover:text-slate-900 transition-all"
+                        >
+                          <MoreVertical size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

@@ -157,7 +157,7 @@ export async function POST(req: Request) {
     console.log(">>> [DEBUG] Regular lead check result:", lead ? "Found" : "Not Found");
 
     if (!lead) {
-      return NextResponse.json({ error: "Email not registered as a CRM Lead" }, { status: 404 });
+      return NextResponse.json({ error: "Email not registered as a Sales Portal Lead" }, { status: 404 });
     }
 
     // 2.5 Check if Lead is a CLIENT

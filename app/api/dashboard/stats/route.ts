@@ -96,13 +96,14 @@ export async function GET() {
       : (storageBytes / (1024 * 1024)).toFixed(1) + " MB";
 
     // Stage distribution for pipeline
-    const stageOrder = ["NEW", "CONTACTED", "COLD_CHATTING", "MEETING_SET", "NEGOTIATION", "NOT_INTERESTED"];
+    const stageOrder = ["NEW", "CONTACTED", "COLD_CHATTING", "MEETING_SET", "NEGOTIATION", "CLIENT", "NOT_INTERESTED"];
     const stageLabelMap: Record<string, string> = {
       NEW: "New",
       CONTACTED: "Contacted",
       COLD_CHATTING: "Cold Chatting",
       NEGOTIATION: "Negotiation",
       MEETING_SET: "Meeting Set",
+      CLIENT: "Client",
       NOT_INTERESTED: "Not Interested",
     };
     const stageColorMap: Record<string, string> = {
@@ -111,6 +112,7 @@ export async function GET() {
       COLD_CHATTING: "bg-purple-100 text-purple-700 border-purple-200",
       NEGOTIATION: "bg-amber-100 text-amber-700 border-amber-200",
       MEETING_SET: "bg-green-100 text-green-700 border-green-200",
+      CLIENT: "bg-blue-600 text-white border-blue-700",
       NOT_INTERESTED: "bg-red-100 text-red-700 border-red-200",
     };
 

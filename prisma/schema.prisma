@@ -69,6 +69,8 @@ model User {
   team                      Team?           @relation("TeamMembers", fields: [teamId], references: [id])
 
   @@index([organizationId])
+  @@index([email])
+  @@index([organizationId, createdAt])
   @@map("users")
 }
 
@@ -95,6 +97,7 @@ model LeadSource {
   leads          Lead[]
 
   @@unique([name, organizationId])
+  @@index([organizationId])
   @@map("lead_sources")
 }
 
@@ -157,6 +160,13 @@ model Lead {
   @@index([stage])
   @@index([priority])
   @@index([followUpAt])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, email])
+  @@index([organizationId, industry])
+  @@index([organizationId, ownerId])
+  @@index([organizationId, phone])
+  @@index([organizationId, stage])
+  @@index([organizationId, subStatus])
   @@map("leads")
 }
 
@@ -242,6 +252,8 @@ model Reminder {
   @@index([organizationId])
   @@index([userId, scheduledAt])
   @@index([leadId])
+  @@index([organizationId, status])
+  @@index([status, scheduledAt])
   @@map("reminders")
 }
 
@@ -261,6 +273,7 @@ model Alert {
 
   @@index([organizationId])
   @@index([userId, isRead])
+  @@index([userId, organizationId, createdAt])
   @@map("alerts")
 }
 
@@ -276,6 +289,7 @@ model ChatThread {
   lead           Lead          @relation(fields: [leadId], references: [id], onDelete: Cascade)
   organization   Organization  @relation(fields: [organizationId], references: [id])
 
+  @@index([organizationId])
   @@map("chat_threads")
 }
 
@@ -290,6 +304,7 @@ model ChatMessage {
   attachments ChatMessageAttachment[]
   thread      ChatThread              @relation(fields: [threadId], references: [id], onDelete: Cascade)
 
+  @@index([threadId, createdAt])
   @@map("chat_messages")
 }
 
@@ -329,27 +344,30 @@ model AuditLog {
   @@index([leadId])
   @@index([organizationId])
   @@index([createdAt])
+  @@index([leadId, organizationId, createdAt])
+  @@index([organizationId, action])
+  @@index([organizationId, createdAt])
   @@map("audit_logs")
 }
 
 model SidebarFilter {
-  id             String         @id @default(uuid())
+  id             String          @id @default(uuid())
   name           String
-  status         LeadStage?
-  subStatus      LeadSubStatus?
-  dealSizeMin    Decimal?       @db.Decimal(15, 2)
-  dealSizeMax    Decimal?       @db.Decimal(15, 2)
-  icon           String         @default("filter")
-  color          String         @default("blue")
-  orderIndex     Int            @default(0)
+  dealSizeMin    Decimal?        @db.Decimal(15, 2)
+  dealSizeMax    Decimal?        @db.Decimal(15, 2)
+  icon           String          @default("filter")
+  color          String          @default("blue")
+  orderIndex     Int             @default(0)
   organizationId String
   createdById    String
-  createdAt      DateTime       @default(now())
+  createdAt      DateTime        @default(now())
   alphabet       String?
-  industry       String?
-  source         String?
-  createdBy      User           @relation("SidebarFilterCreator", fields: [createdById], references: [id])
-  organization   Organization   @relation(fields: [organizationId], references: [id])
+  industries     String[]
+  sources        String[]
+  statuses       LeadStage[]
+  subStatuses    LeadSubStatus[]
+  createdBy      User            @relation("SidebarFilterCreator", fields: [createdById], references: [id])
+  organization   Organization    @relation(fields: [organizationId], references: [id])
 
   @@index([organizationId])
   @@map("sidebar_filters")
@@ -488,7 +506,7 @@ enum LeadStage {
   NEGOTIATION
   COLD
   CHATTING
-  CUSTOMER
+  CLIENT
   WON
 }
 

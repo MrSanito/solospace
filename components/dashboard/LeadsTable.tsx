@@ -16,7 +16,7 @@ const STAGE_STYLES: Record<string, string> = {
   COLD: "bg-slate-50 text-slate-600",
   CHATTING: "bg-green-50 text-green-700",
   WON: "bg-emerald-100 text-emerald-800 font-bold",
-  CUSTOMER: "bg-gold-50 text-amber-900 font-bold border border-amber-200",
+  CLIENT: "bg-gold-50 text-amber-900 font-bold border border-amber-200",
 };
 
 const STAGE_LABEL: Record<string, string> = {
@@ -28,7 +28,7 @@ const STAGE_LABEL: Record<string, string> = {
   COLD: "Cold Chatting", 
   CHATTING: "Cold Chatting",
   WON: "Closed Won",
-  CUSTOMER: "Customer",
+  CLIENT: "Client",
 };
 
 const PRIORITY_STYLES: Record<string, string> = {

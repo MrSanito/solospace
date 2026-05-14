@@ -267,7 +267,7 @@ const companies = [
 ] as const
 
 // Cycling helpers
-const stages:     LeadStage[]    = [LeadStage.NEW, LeadStage.CONTACTED, LeadStage.CHATTING, LeadStage.NEGOTIATION, LeadStage.MEETING_SET, LeadStage.COLD, LeadStage.NOT_INTERESTED]
+const stages:     LeadStage[]    = [LeadStage.NEW, LeadStage.CONTACTED, LeadStage.CHATTING, LeadStage.NEGOTIATION, LeadStage.MEETING_SET, LeadStage.COLD, LeadStage.NOT_INTERESTED, LeadStage.CLIENT, LeadStage.WON]
 const priorities: LeadPriority[] = [LeadPriority.HIGH, LeadPriority.MEDIUM, LeadPriority.LOW]
 const subStatuses: LeadSubStatus[] = [LeadSubStatus.NO_REQUIREMENT, LeadSubStatus.BUDGET_LOW, LeadSubStatus.PROPOSAL_SENT, LeadSubStatus.WARM_LEAD, LeadSubStatus.BLANK]
 const dealValues  = [150000, 200000, 250000, 300000, 350000, 400000, 450000, 500000, 600000, 750000]

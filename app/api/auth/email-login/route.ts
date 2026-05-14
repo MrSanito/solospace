@@ -160,8 +160,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email not registered as a CRM Lead" }, { status: 404 });
     }
 
-    // 2.5 Check if Lead is a CUSTOMER
-    if (lead.stage !== "CUSTOMER") {
+    // 2.5 Check if Lead is a CLIENT
+    if (lead.stage !== "CLIENT") {
       return NextResponse.json({ 
         error: "Access Denied: You do not have access currently. Please contact support." 
       }, { status: 403 });

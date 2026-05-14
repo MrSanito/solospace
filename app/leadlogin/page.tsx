@@ -163,7 +163,7 @@ export default function LeadLoginPage() {
             transition={{ delay: 0.5 }}
             className="text-center mb-8"
           >
-            <h2 className="text-3xl font-black text-gray-800 mb-2 tracking-tighter uppercase">Customer Portal Access</h2>
+            <h2 className="text-3xl font-black text-gray-800 mb-2 tracking-tighter uppercase">Client Portal Access</h2>
             <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Sign in with your registered email and portal key</p>
           </motion.div>
 

@@ -140,7 +140,7 @@ export default function LeadsPage() {
           <option value="MEETING_SET">Meeting Set</option>
           <option value="NEGOTIATION">Negotiation</option>
           <option value="WON">Closed Won</option>
-          <option value="CUSTOMER">Customer</option>
+          <option value="CLIENT">Client</option>
           <option value="NOT_INTERESTED">Not Interested</option>
         </select>
         <select 

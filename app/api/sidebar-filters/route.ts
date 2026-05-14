@@ -49,7 +49,10 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { name, status, subStatus, dealSizeMin, dealSizeMax, industry, alphabet, icon, color } = body;
+    const { 
+      name, statuses, subStatuses, dealSizeMin, dealSizeMax, 
+      industries, alphabet, icon, color, sources 
+    } = body;
 
     if (!name) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -66,11 +69,12 @@ export async function POST(req: Request) {
     const filter = await prisma.sidebarFilter.create({
       data: {
         name,
-        status: (status as any) || null,
-        subStatus: (subStatus as any) || null,
+        statuses: Array.isArray(statuses) ? statuses : [],
+        subStatuses: Array.isArray(subStatuses) ? subStatuses : [],
         dealSizeMin: dealSizeMin ? parseFloat(dealSizeMin) : null,
         dealSizeMax: dealSizeMax ? parseFloat(dealSizeMax) : null,
-        industry: industry || null,
+        industries: Array.isArray(industries) ? industries : [],
+        sources: Array.isArray(sources) ? sources : [],
         alphabet: alphabet || null,
         icon: icon || "filter",
         color: color || "blue",

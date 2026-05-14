@@ -419,7 +419,7 @@ export default function LoginPage() {
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="Enter your name as in Sales Portal"
+                        placeholder="Enter your name as in Solo Sales"
                         required
                         className="w-full pl-10 pr-4 py-3 rounded-xl text-sm text-gray-700 placeholder-gray-300 outline-none transition-all"
                         style={{ border: "1.5px solid #e5e7eb", background: "white" }}

@@ -99,7 +99,7 @@ export default function GlobalNavbar({ isLead, leadData, activeTab, onTabChange 
             <span className="text-white font-black text-xl tracking-tighter">S</span>
           </div>
           <div className="hidden sm:block">
-            <p className="text-sm font-black tracking-tight text-gray-900 leading-none">SOLO SPACE</p>
+            <p className="text-sm font-black tracking-tight text-gray-900 leading-none">SOLO SALES</p>
             <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1 leading-none">
               {isLead ? "" : "Management"}
             </p>

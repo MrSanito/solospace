@@ -21,11 +21,14 @@ const STAGE_LABEL: Record<string, string> = {
 
 const PIPELINE_STAGES = ["NEW", "CONTACTED", "NOT_INTERESTED", "MEETING_SET", "NEGOTIATION", "COLD", "CHATTING"];
 
+const SUB_STATUS_OPTIONS = ["BLANK", "CHATTING", "NOT_ANSWERED", "WRONG_NO", "NO_REQUIREMENT", "BUDGET_LOW", "PROPOSAL_SENT", "WARM_LEAD", "TEXTED"];
+
 const SUB_STATUS_LABEL: Record<string, string> = {
   NO_REQUIREMENT: "No Requirement",
   BUDGET_LOW: "Budget Low",
   PROPOSAL_SENT: "Proposal Sent",
   WARM_LEAD: "Warm Lead",
+  TEXTED: "Texted",
   BLANK: "Blank",
 };
 

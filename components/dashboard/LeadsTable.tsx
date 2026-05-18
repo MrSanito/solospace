@@ -485,7 +485,8 @@ export default function LeadsTable({ onLeadClick, onChatClick, activeNav, refres
       </div>
 
       <div className="w-full overflow-x-auto scrollbar-hide">
-        <table className="w-full table-auto text-[13px]">
+        <div className="min-w-[1200px]">
+          <table className="w-full table-auto text-[13px]">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-100">
               <th className="w-[40px] px-3 py-2.5">
@@ -644,13 +645,13 @@ export default function LeadsTable({ onLeadClick, onChatClick, activeNav, refres
           </thead>
           <tbody className="divide-y divide-slate-50">
             {loading && (
-              <tr><td colSpan={11} className="text-center py-20">
+              <tr><td colSpan={12} className="text-center py-20">
                 <div className="inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-2" />
                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Calibrating Pipeline...</p>
               </td></tr>
             )}
             {!loading && paginatedLeads.length === 0 && (
-              <tr><td colSpan={11} className="text-center py-20 text-slate-400 text-[13px]">No leads matching protocol filters</td></tr>
+              <tr><td colSpan={12} className="text-center py-20 text-slate-400 text-[13px]">No leads matching protocol filters</td></tr>
             )}
             {paginatedLeads.map((lead) => (
               <tr
@@ -734,6 +735,7 @@ export default function LeadsTable({ onLeadClick, onChatClick, activeNav, refres
           </tbody>
         </table>
       </div>
+    </div>
 
       <div className="px-5 py-4 flex items-center justify-between border-t border-slate-100 bg-slate-50/30 rounded-b-xl">
         <div className="flex items-center gap-4">

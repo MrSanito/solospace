@@ -29,6 +29,7 @@ model Organization {
   sidebarFilters    SidebarFilter[]
   teams             Team[]
   users             User[]
+  proposals         Proposal[]
 
   @@map("organizations")
 }
@@ -62,6 +63,7 @@ model User {
   securityIncidents         SecurityEWS[]
   sidebarFilters            SidebarFilter[] @relation("SidebarFilterCreator")
   managedTeam               Team?           @relation("TeamManager")
+  proposals                 Proposal[]      @relation("ProposalCreator")
   customRole                CustomRole?     @relation("UserCustomRole", fields: [customRoleId], references: [id])
   manager                   User?           @relation("UserHierarchy", fields: [managerId], references: [id])
   subordinates              User[]          @relation("UserHierarchy")
@@ -69,8 +71,8 @@ model User {
   team                      Team?           @relation("TeamMembers", fields: [teamId], references: [id])
 
   @@index([organizationId])
-  @@index([email])
   @@index([organizationId, createdAt])
+  @@index([email])
   @@map("users")
 }
 
@@ -138,6 +140,8 @@ model Lead {
   updatedAt          DateTime           @updatedAt
   requirement        String?
   industry           String?
+  city               String?
+  state              String?
   subStatus          LeadSubStatus      @default(BLANK)
   project            String?
   lastCommunicatedAt DateTime?
@@ -154,19 +158,20 @@ model Lead {
   notes              Note[]
   reminders          Reminder[]
   securityIncidents  SecurityEWS[]
+  proposals          Proposal[]
 
   @@index([organizationId])
   @@index([ownerId])
   @@index([stage])
   @@index([priority])
   @@index([followUpAt])
+  @@index([organizationId, ownerId])
   @@index([organizationId, createdAt])
   @@index([organizationId, email])
-  @@index([organizationId, industry])
-  @@index([organizationId, ownerId])
   @@index([organizationId, phone])
-  @@index([organizationId, stage])
   @@index([organizationId, subStatus])
+  @@index([organizationId, industry])
+  @@index([organizationId, stage])
   @@map("leads")
 }
 
@@ -267,7 +272,7 @@ model Alert {
   body           String?
   isRead         Boolean      @default(false)
   createdAt      DateTime     @default(now())
-  lead           Lead?        @relation(fields: [leadId], references: [id])
+  lead           Lead?        @relation(fields: [leadId], references: [id], onDelete: SetNull)
   organization   Organization @relation(fields: [organizationId], references: [id])
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -338,21 +343,25 @@ model AuditLog {
   note           String?
   source         SourceType
   createdAt      DateTime     @default(now())
-  lead           Lead?        @relation(fields: [leadId], references: [id])
+  lead           Lead?        @relation(fields: [leadId], references: [id], onDelete: SetNull)
   organization   Organization @relation(fields: [organizationId], references: [id])
 
   @@index([leadId])
   @@index([organizationId])
   @@index([createdAt])
-  @@index([leadId, organizationId, createdAt])
   @@index([organizationId, action])
   @@index([organizationId, createdAt])
+  @@index([leadId, organizationId, createdAt])
   @@map("audit_logs")
 }
 
 model SidebarFilter {
   id             String          @id @default(uuid())
   name           String
+  statuses       LeadStage[]
+  subStatuses    LeadSubStatus[]
+  industries     String[]
+  sources        String[]
   dealSizeMin    Decimal?        @db.Decimal(15, 2)
   dealSizeMax    Decimal?        @db.Decimal(15, 2)
   icon           String          @default("filter")
@@ -362,10 +371,6 @@ model SidebarFilter {
   createdById    String
   createdAt      DateTime        @default(now())
   alphabet       String?
-  industries     String[]
-  sources        String[]
-  statuses       LeadStage[]
-  subStatuses    LeadSubStatus[]
   createdBy      User            @relation("SidebarFilterCreator", fields: [createdById], references: [id])
   organization   Organization    @relation(fields: [organizationId], references: [id])
 
@@ -423,7 +428,7 @@ model SecurityEWS {
   location       String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  lead           Lead?        @relation(fields: [leadId], references: [id])
+  lead           Lead?        @relation(fields: [leadId], references: [id], onDelete: SetNull)
   organization   Organization @relation(fields: [organizationId], references: [id])
   user           User         @relation(fields: [userId], references: [id])
 
@@ -606,4 +611,38 @@ enum PermissionKey {
 enum SenderType {
   LEAD
   USER
+}
+
+model Proposal {
+  id                      String       @id @default(uuid())
+  clientCompanyName       String
+  proposalDate            String
+  industry                String
+  contactPerson           String
+  teamSize                String
+  currentTools            String
+  businessModel           String
+  painPoints              String       @db.Text
+  desiredOutcomes         String       @db.Text
+  scopeOfWork             String       @db.Text
+  recommendedAutomations  String       @db.Text
+  deploymentTimeline      String
+  packageName             String
+  pricing                 String
+  addons                  String
+  supportDuration         String
+  fileUrl                 String
+  cloudinaryPublicId      String?
+  leadId                  String
+  createdById             String
+  organizationId          String
+  createdAt               DateTime     @default(now())
+  
+  lead                    Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  createdBy               User         @relation("ProposalCreator", fields: [createdById], references: [id])
+  organization            Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([leadId])
+  @@index([organizationId])
+  @@map("proposals")
 }
